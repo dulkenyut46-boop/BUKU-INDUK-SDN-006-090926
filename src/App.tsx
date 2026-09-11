@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SchoolProvider, useSchool } from './context/SchoolContext';
 import { Sidebar, ActiveTab } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
@@ -27,6 +27,7 @@ import { MutationModal } from './components/modals/MutationModal';
 import { STTBModal } from './components/modals/STTBModal';
 import { RaportInputModal } from './components/modals/RaportInputModal';
 import { ActivityLogModal } from './components/modals/ActivityLogModal';
+import { RestoreDatabaseModal } from './components/modals/RestoreDatabaseModal';
 
 import { Student, MutationRecord, GraduationSTTB, SemesterReport } from './types';
 
@@ -86,11 +87,46 @@ const MainAppContent: React.FC = () => {
   const [studentForRaport, setStudentForRaport] = useState<Student | null>(null);
 
   const [isActivityLogModalOpen, setIsActivityLogModalOpen] = useState(false);
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+
+  // Auto-restore student form modal if browser was refreshed while filling
+  const hasCheckedAutoRestoreRef = useRef(false);
+  useEffect(() => {
+    if (hasCheckedAutoRestoreRef.current) return;
+    try {
+      const savedModalState = localStorage.getItem('buku_induk_modal_open_state');
+      if (savedModalState) {
+        const parsed = JSON.parse(savedModalState);
+        if (parsed?.isOpen) {
+          hasCheckedAutoRestoreRef.current = true;
+          if (parsed.isEdit && parsed.studentId) {
+            const target = students.find(s => s.id === parsed.studentId);
+            if (target) {
+              setStudentToEdit(target);
+              setIsAddEditModalOpen(true);
+            }
+          } else if (!parsed.isEdit) {
+            setStudentToEdit(null);
+            setIsAddEditModalOpen(true);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to restore modal open state:', err);
+    }
+  }, [students]);
 
   // Handlers
   const handleOpenAddModal = () => {
     setStudentToEdit(null);
     setIsAddEditModalOpen(true);
+  };
+
+  const handleCloseAddEditModal = () => {
+    setIsAddEditModalOpen(false);
+    try {
+      localStorage.removeItem('buku_induk_modal_open_state');
+    } catch (e) {}
   };
 
   const handleOpenEditModal = (student: Student) => {
@@ -177,6 +213,7 @@ const MainAppContent: React.FC = () => {
         isOpen={isSidebarOpen}
         setIsOpen={handleToggleSidebar}
         onClose={() => handleToggleSidebar(false)}
+        onOpenRestoreDatabase={() => setIsRestoreModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -189,6 +226,7 @@ const MainAppContent: React.FC = () => {
           onOpenActivityLogs={() => setIsActivityLogModalOpen(true)}
           setActiveTab={setActiveTab}
           onSelectStudentDetail={handleSelectStudentDetail}
+          onOpenRestoreDatabase={() => setIsRestoreModalOpen(true)}
         />
 
         {/* Dynamic Page Views */}
@@ -229,6 +267,7 @@ const MainAppContent: React.FC = () => {
                 setActiveTab={setActiveTab}
                 onOpenActivityLogs={() => setIsActivityLogModalOpen(true)}
                 onBack={() => setActiveTab('dashboard')}
+                onOpenRestoreDatabase={() => setIsRestoreModalOpen(true)}
               />
             )}
 
@@ -299,6 +338,7 @@ const MainAppContent: React.FC = () => {
                 setActiveTab={setActiveTab}
                 onBack={() => setActiveTab('dashboard')}
                 onOpenActivityLogs={() => setIsActivityLogModalOpen(true)}
+                onOpenRestoreDatabase={() => setIsRestoreModalOpen(true)}
               />
             )}
           </div>
@@ -308,7 +348,7 @@ const MainAppContent: React.FC = () => {
       {/* MODALS */}
       <StudentFormModal
         isOpen={isAddEditModalOpen}
-        onClose={() => setIsAddEditModalOpen(false)}
+        onClose={handleCloseAddEditModal}
         onSave={handleSaveStudent}
         studentToEdit={studentToEdit}
         initialData={studentToEdit}
@@ -350,6 +390,11 @@ const MainAppContent: React.FC = () => {
       <ActivityLogModal
         isOpen={isActivityLogModalOpen}
         onClose={() => setIsActivityLogModalOpen(false)}
+      />
+
+      <RestoreDatabaseModal
+        isOpen={isRestoreModalOpen}
+        onClose={() => setIsRestoreModalOpen(false)}
       />
     </div>
   );

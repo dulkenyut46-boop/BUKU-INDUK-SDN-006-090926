@@ -377,8 +377,8 @@ export const KartuPelajarView: React.FC<KartuPelajarViewProps> = ({
                   {/* Left: School Crest / Logo */}
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="w-7 h-7 rounded-md bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-xs border border-white/40 p-0.5">
-                      {schoolProfile.logoUrl && !schoolProfile.logoUrl.startsWith('preset:') ? (
-                        <img src={schoolProfile.logoUrl} alt="Logo Sekolah" className="w-full h-full object-contain" />
+                      {(schoolProfile.logoKiriUrl || schoolProfile.logoUrl) && !(schoolProfile.logoKiriUrl || schoolProfile.logoUrl)?.startsWith('preset:') ? (
+                        <img src={schoolProfile.logoKiriUrl || schoolProfile.logoUrl} alt="Logo Sekolah" className="w-full h-full object-contain" />
                       ) : (
                         <TutWuriHandayaniSDLogo className="w-6 h-6" />
                       )}

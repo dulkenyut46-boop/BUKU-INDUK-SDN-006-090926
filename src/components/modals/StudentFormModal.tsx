@@ -21,7 +21,9 @@ import {
   FileText,
   Edit3,
   Settings,
-  Plus
+  Plus,
+  RotateCcw,
+  Clock
 } from 'lucide-react';
 import { Student, Gender, Religion, StudentStatus, ParentInfo, GuardianInfo, HealthRecord } from '../../types';
 import { cn } from '../../lib/utils';
@@ -242,6 +244,36 @@ const getInitialStudentData = (
   };
 };
 
+const DRAFT_KEY_PREFIX = 'buku_induk_draft_student_';
+export const MODAL_OPEN_STATE_KEY = 'buku_induk_modal_open_state';
+
+export interface StudentFormDraft {
+  formData: Partial<Student>;
+  hasWali: boolean;
+  activeTab: TabType;
+  isManualClass: boolean;
+  manualClassInput: string;
+  savedAt: string;
+  studentId?: string;
+  isEdit: boolean;
+}
+
+// Helper to check if a saved draft contains meaningful data worth restoring
+const isMeaningfulDraft = (draftFormData?: Partial<Student>, baseline?: Partial<Student>): boolean => {
+  if (!draftFormData) return false;
+  if (draftFormData.namaLengkap && draftFormData.namaLengkap.trim() !== '') return true;
+  if (draftFormData.nisn && draftFormData.nisn !== baseline?.nisn) return true;
+  if (draftFormData.noInduk && draftFormData.noInduk !== baseline?.noInduk) return true;
+  if (draftFormData.nik && draftFormData.nik !== baseline?.nik) return true;
+  if (draftFormData.noKk && draftFormData.noKk !== baseline?.noKk) return true;
+  if (draftFormData.alamat && draftFormData.alamat !== baseline?.alamat) return true;
+  if (draftFormData.ayah?.nama && draftFormData.ayah.nama.trim() !== '') return true;
+  if (draftFormData.ibu?.nama && draftFormData.ibu.nama.trim() !== '') return true;
+  if (draftFormData.wali?.nama && draftFormData.wali.nama.trim() !== '') return true;
+  if (draftFormData.fotoUrl && draftFormData.fotoUrl.trim() !== '') return true;
+  return JSON.stringify(draftFormData) !== JSON.stringify(baseline);
+};
+
 export const StudentFormModal: React.FC<StudentFormModalProps> = ({
   isOpen,
   onClose,
@@ -259,6 +291,16 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successToast, setSuccessToast] = useState<string | null>(null);
   
+  // Auto-save state
+  const draftKey = studentToEdit?.id 
+    ? `${DRAFT_KEY_PREFIX}edit_${studentToEdit.id}` 
+    : `${DRAFT_KEY_PREFIX}new`;
+  const [draftRestored, setDraftRestored] = useState<boolean>(false);
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState<boolean>(false);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isLoadedRef = useRef<boolean>(false);
+
   // Manual class edit & manage classes modal states
   const [isManualClass, setIsManualClass] = useState(false);
   const [manualClassInput, setManualClassInput] = useState('');
@@ -266,21 +308,178 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync state whenever studentToEdit, initialData or isOpen changes
+  // Sync state & restore draft whenever studentToEdit, initialData or isOpen changes
   useEffect(() => {
     if (isOpen) {
       const activeObj = studentToEdit || initialData;
-      const initial = getInitialStudentData(activeObj, students.length, schoolProfile);
-      setFormData(initial);
+      const initialBaseline = getInitialStudentData(activeObj, students.length, schoolProfile);
+
+      let draftLoaded = false;
+      try {
+        const rawDraft = localStorage.getItem(draftKey);
+        if (rawDraft) {
+          const parsed: StudentFormDraft = JSON.parse(rawDraft);
+          if (parsed && parsed.formData && isMeaningfulDraft(parsed.formData, initialBaseline)) {
+            setFormData({
+              ...initialBaseline,
+              ...parsed.formData,
+              ayah: { ...initialBaseline.ayah, ...parsed.formData.ayah },
+              ibu: { ...initialBaseline.ibu, ...parsed.formData.ibu },
+              wali: { ...initialBaseline.wali, ...parsed.formData.wali },
+              kesehatan: { ...initialBaseline.kesehatan, ...parsed.formData.kesehatan },
+            });
+            setHasWali(parsed.hasWali ?? Boolean(parsed.formData?.wali?.nama && parsed.formData.wali.nama.trim() !== ''));
+            setActiveTab(parsed.activeTab || 'pribadi');
+            setIsManualClass(parsed.isManualClass ?? false);
+            setManualClassInput(parsed.manualClassInput || parsed.formData?.kelasSekarang || 'Kelas 1');
+            setDraftRestored(true);
+            draftLoaded = true;
+
+            if (parsed.savedAt) {
+              const d = new Date(parsed.savedAt);
+              if (!isNaN(d.getTime())) {
+                setLastSavedTime(d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Gagal memuat draf tersimpan:', err);
+      }
+
+      if (!draftLoaded) {
+        setFormData(initialBaseline);
+        setHasWali(Boolean(activeObj?.wali?.nama && activeObj.wali.nama.trim() !== ''));
+        setActiveTab('pribadi');
+        setIsManualClass(false);
+        setManualClassInput(initialBaseline.kelasSekarang || 'Kelas 1');
+        setDraftRestored(false);
+        setLastSavedTime(null);
+      }
+
+      setErrors({});
+      setSuccessToast(null);
+      setIsManageClassesOpen(false);
+      isLoadedRef.current = true;
+
+      // Track modal open state in localStorage so it reopens if browser is refreshed
+      try {
+        localStorage.setItem(MODAL_OPEN_STATE_KEY, JSON.stringify({
+          isOpen: true,
+          isEdit: Boolean(studentToEdit),
+          studentId: studentToEdit?.id || null,
+        }));
+      } catch (e) {}
+    } else {
+      isLoadedRef.current = false;
+      setDraftRestored(false);
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    }
+  }, [studentToEdit, initialData, isOpen, students.length, schoolProfile, draftKey]);
+
+  // Debounced auto-save effect to localStorage whenever form changes
+  useEffect(() => {
+    if (!isOpen || !isLoadedRef.current) return;
+
+    setIsSavingDraft(true);
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      try {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const draft: StudentFormDraft = {
+          formData,
+          hasWali,
+          activeTab,
+          isManualClass,
+          manualClassInput,
+          savedAt: now.toISOString(),
+          studentId: studentToEdit?.id,
+          isEdit: Boolean(studentToEdit),
+        };
+        localStorage.setItem(draftKey, JSON.stringify(draft));
+        localStorage.setItem(MODAL_OPEN_STATE_KEY, JSON.stringify({
+          isOpen: true,
+          isEdit: Boolean(studentToEdit),
+          studentId: studentToEdit?.id || null,
+        }));
+        setLastSavedTime(timeStr);
+      } catch (err) {
+        console.error('Auto-save gagal menyimpan:', err);
+      } finally {
+        setIsSavingDraft(false);
+      }
+    }, 500);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [formData, hasWali, activeTab, isManualClass, manualClassInput, isOpen, draftKey, studentToEdit]);
+
+  // Emergency synchronous flush before browser unload/refresh
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (!isOpen || !isLoadedRef.current) return;
+      try {
+        const now = new Date();
+        const draft: StudentFormDraft = {
+          formData,
+          hasWali,
+          activeTab,
+          isManualClass,
+          manualClassInput,
+          savedAt: now.toISOString(),
+          studentId: studentToEdit?.id,
+          isEdit: Boolean(studentToEdit),
+        };
+        localStorage.setItem(draftKey, JSON.stringify(draft));
+        localStorage.setItem(MODAL_OPEN_STATE_KEY, JSON.stringify({
+          isOpen: true,
+          isEdit: Boolean(studentToEdit),
+          studentId: studentToEdit?.id || null,
+        }));
+      } catch (e) {}
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isOpen, formData, hasWali, activeTab, isManualClass, manualClassInput, draftKey, studentToEdit]);
+
+  // Discard draft and reset to default initial data
+  const handleDiscardDraft = () => {
+    if (window.confirm('Hapus draf yang tersimpan otomatis dan kembalikan formulir ke kondisi awal?')) {
+      try {
+        localStorage.removeItem(draftKey);
+      } catch (e) {}
+      const activeObj = studentToEdit || initialData;
+      const initialBaseline = getInitialStudentData(activeObj, students.length, schoolProfile);
+      setFormData(initialBaseline);
       setHasWali(Boolean(activeObj?.wali?.nama && activeObj.wali.nama.trim() !== ''));
       setActiveTab('pribadi');
       setErrors({});
-      setSuccessToast(null);
       setIsManualClass(false);
-      setManualClassInput(initial.kelasSekarang || 'Kelas 1');
-      setIsManageClassesOpen(false);
+      setManualClassInput(initialBaseline.kelasSekarang || 'Kelas 1');
+      setDraftRestored(false);
+      setLastSavedTime(null);
+      setSuccessToast('Draf berhasil dihapus. Formulir diatur ulang ke data awal.');
+      setTimeout(() => setSuccessToast(null), 3000);
     }
-  }, [studentToEdit, initialData, isOpen, students.length, schoolProfile]);
+  };
+
+  // Safe close handler that preserves draft but removes open modal state
+  const handleModalClose = () => {
+    try {
+      localStorage.removeItem(MODAL_OPEN_STATE_KEY);
+    } catch (e) {}
+    onClose();
+  };
 
   // Combined list of class options from school profile, default list, and registered students
   const availableClassList = React.useMemo(() => {
@@ -502,6 +701,12 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({
       wali: hasWali ? formData.wali : undefined,
     };
 
+    // Clear saved draft on successful submit
+    try {
+      localStorage.removeItem(draftKey);
+      localStorage.removeItem(MODAL_OPEN_STATE_KEY);
+    } catch (e) {}
+
     onSave(submissionData);
     onClose();
   };
@@ -547,6 +752,25 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Auto-Save Live Status Badge */}
+            <div 
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/20 text-[11px] font-medium text-white shadow-2xs transition-colors"
+              title={lastSavedTime ? `Terakhir disimpan otomatis pada pukul ${lastSavedTime}. Data Anda aman tersimpan di draf.` : 'Auto-save aktif melindungi data formulir dari ketidaksengajaan menutup atau refresh.'}
+            >
+              <span className={cn(
+                "w-2 h-2 rounded-full shrink-0 transition-all",
+                isSavingDraft 
+                  ? "bg-amber-400 animate-ping" 
+                  : "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+              )} />
+              <span className="hidden sm:inline">
+                {isSavingDraft ? 'Menyimpan draf...' : lastSavedTime ? `Auto-save: ${lastSavedTime}` : 'Auto-save aktif'}
+              </span>
+              <span className="sm:hidden text-[10px]">
+                {isSavingDraft ? 'Menyimpan' : 'Auto-save'}
+              </span>
+            </div>
+
             <button
               type="button"
               onClick={handleSubmit}
@@ -556,7 +780,7 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({
               <span>SIMPAN</span>
             </button>
             <button
-              onClick={onClose}
+              onClick={handleModalClose}
               className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
               title="Tutup Formulir"
             >
@@ -610,6 +834,62 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({
         {/* Form Body Container */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-white dark:bg-slate-900">
           
+          {/* Toast Notification */}
+          {successToast && (
+            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100 text-xs font-bold flex items-center justify-between animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>{successToast}</span>
+              </div>
+              <button type="button" onClick={() => setSuccessToast(null)} className="text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Draf Restored Alert Banner */}
+          {draftRestored && (
+            <div className="p-3.5 rounded-xl bg-blue-50/95 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-blue-950 dark:text-blue-100 shadow-xs animate-in fade-in">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-extrabold flex items-center gap-2">
+                    <span>Draf Formulir Otomatis Dipulihkan</span>
+                    {lastSavedTime && (
+                      <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                        {lastSavedTime}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-blue-800/90 dark:text-blue-300/90 mt-0.5">
+                    Data isian siswa sebelumnya telah dimuat kembali secara otomatis sehingga tidak ada data yang hilang saat modal tertutup atau halaman direfresh.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setDraftRestored(false)}
+                  className="px-3 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 bg-white dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-lg border border-blue-200 dark:border-slate-700 transition-colors cursor-pointer"
+                  title="Tutup pemberitahuan dan lanjutkan pengisian"
+                >
+                  Lanjutkan
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDiscardDraft}
+                  className="px-3 py-1.5 text-xs font-bold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 rounded-lg border border-rose-200 dark:border-rose-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  title="Hapus draf yang tersimpan dan kembalikan formulir ke data awal"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Buang Draf</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* TAB 1: IDENTITAS SISWA */}
           {activeTab === 'pribadi' && (
             <div className="space-y-4">
@@ -1864,11 +2144,23 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleModalClose}
                 className="flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               >
                 Batal
               </button>
+
+              {(draftRestored || lastSavedTime) && (
+                <button
+                  type="button"
+                  onClick={handleDiscardDraft}
+                  className="hidden sm:flex items-center gap-1 px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl transition-colors cursor-pointer"
+                  title="Hapus draf otomatis dan kembalikan formulir ke kondisi awal"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Reset Form</span>
+                </button>
+              )}
 
               {activeTab !== 'pribadi' && (
                 <button
@@ -1882,6 +2174,13 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({
                   ← Sebelumnya
                 </button>
               )}
+            </div>
+
+            <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span>
+                {lastSavedTime ? `Draf tersimpan otomatis (${lastSavedTime})` : 'Auto-save formulir aktif'}
+              </span>
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">

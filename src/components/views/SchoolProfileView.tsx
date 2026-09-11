@@ -422,8 +422,8 @@ export const SchoolProfileView: React.FC<SchoolProfileViewProps> = ({
               <TutWuriHandayaniKemdikbudLogo className="w-12 h-12" />
             ) : formData.tutWuriLogoUrl === 'preset:kemenag-mi' ? (
               <KemenagMadrasahLogo className="w-12 h-12" />
-            ) : formData.logoUrl && !formData.logoUrl.startsWith('preset:') ? (
-              <img src={formData.logoUrl} alt="Logo Sekolah" className="w-12 h-12 object-contain" referrerPolicy="no-referrer" />
+            ) : (formData.logoKiriUrl || formData.logoUrl) && !(formData.logoKiriUrl || formData.logoUrl)?.startsWith('preset:') ? (
+              <img src={formData.logoKiriUrl || formData.logoUrl} alt="Logo Sekolah" className="w-12 h-12 object-contain" referrerPolicy="no-referrer" />
             ) : (
               <TutWuriHandayaniSDLogo className="w-12 h-12" />
             )}

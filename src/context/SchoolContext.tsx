@@ -13,6 +13,7 @@ import {
   SecuritySettings
 } from '../types';
 import { initialStudents, initialSchoolProfile, initialActivityLogs } from '../data/initialData';
+import { parseDbBackupText, DbBackupParseResult } from '../utils/dbBackupHelper';
 import { 
   checkSqlStatus, 
   saveStudentToSql, 
@@ -288,6 +289,11 @@ interface SchoolContextType {
   exportDatabaseDB: () => void;
   exportStudentsCSV: () => void;
   importDatabaseJSON: (jsonData: string) => boolean;
+  restoreDatabaseFromDB: (
+    parsedOrRaw: string | DbBackupParseResult,
+    mode?: 'replace' | 'merge',
+    restoreSchoolProfile?: boolean
+  ) => { success: boolean; studentCount: number; message: string };
   importStudentsBulk: (importedList: Partial<Student>[], duplicateStrategy: 'skip' | 'update' | 'append') => { added: number; updated: number; skipped: number };
   resetDatabase: () => void;
   resetToInitialData: () => void;
@@ -1269,23 +1275,29 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     logActivity('EXPORT', 'Mengekspor daftar siswa ke file CSV / Excel spreadsheet');
   };
 
-  // Import JSON or .DB
-  const importDatabaseJSON = (rawContent: string): boolean => {
+  // Restore Database from DB or JSON
+  const restoreDatabaseFromDB = (
+    parsedOrRaw: string | DbBackupParseResult,
+    mode: 'replace' | 'merge' = 'replace',
+    restoreSchoolProfile: boolean = true
+  ): { success: boolean; studentCount: number; message: string } => {
     try {
-      let contentToParse = rawContent.trim();
-      
-      // If content is from a .db file containing an embedded snapshot
-      if (contentToParse.includes('-- SNAPSHOT_JSON_START:')) {
-        const match = contentToParse.match(/-- SNAPSHOT_JSON_START:(.*?):SNAPSHOT_JSON_END/s);
-        if (match && match[1]) {
-          contentToParse = match[1].trim();
-        }
+      const parsed: DbBackupParseResult =
+        typeof parsedOrRaw === 'string'
+          ? parseDbBackupText(parsedOrRaw)
+          : parsedOrRaw;
+
+      if (!parsed.success || !parsed.students || parsed.students.length === 0) {
+        return {
+          success: false,
+          studentCount: 0,
+          message: parsed.errorMessage || 'Tidak ada data siswa yang valid dalam berkas .db.',
+        };
       }
 
-      const parsed = JSON.parse(contentToParse);
-      if (parsed.students && Array.isArray(parsed.students)) {
+      if (mode === 'replace') {
         setStudents(parsed.students);
-        if (parsed.schoolProfile) {
+        if (restoreSchoolProfile && parsed.schoolProfile) {
           setSchoolProfile(parsed.schoolProfile);
         }
         if (parsed.rolePermissions) {
@@ -1297,13 +1309,44 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (parsed.securitySettings) {
           setSecuritySettings(parsed.securitySettings);
         }
-        logActivity('IMPORT', `Berhasil mengimpor ${parsed.students.length} data siswa dari file cadangan basis data (.db / .json)`);
-        return true;
+        logActivity(
+          'IMPORT',
+          `Memulihkan (ganti total) ${parsed.students.length} data siswa dari berkas basis data ${parsed.fileName || '.db'}`
+        );
+        return {
+          success: true,
+          studentCount: parsed.students.length,
+          message: `Berhasil memulihkan ${parsed.students.length} data siswa dan seluruh arsip buku induk.`,
+        };
+      } else {
+        // Merge mode: update existing or append new
+        const result = importStudentsBulk(parsed.students, 'update');
+        if (restoreSchoolProfile && parsed.schoolProfile) {
+          setSchoolProfile((prev) => ({ ...prev, ...parsed.schoolProfile }));
+        }
+        logActivity(
+          'IMPORT',
+          `Menggabungkan ${parsed.students.length} data siswa (${result.added} baru, ${result.updated} diperbarui) dari berkas basis data ${parsed.fileName || '.db'}`
+        );
+        return {
+          success: true,
+          studentCount: parsed.students.length,
+          message: `Berhasil menggabungkan data: ${result.added} siswa baru ditambahkan, ${result.updated} siswa diperbarui.`,
+        };
       }
-      return false;
-    } catch {
-      return false;
+    } catch (err: any) {
+      return {
+        success: false,
+        studentCount: 0,
+        message: err?.message || 'Gagal memulihkan database.',
+      };
     }
+  };
+
+  // Import JSON or .DB (Backward-compatible helper)
+  const importDatabaseJSON = (rawContent: string): boolean => {
+    const res = restoreDatabaseFromDB(rawContent, 'replace', true);
+    return res.success;
   };
 
   // Import Bulk Students (Excel / Spreadsheet)
@@ -1604,6 +1647,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         exportDatabaseDB,
         exportStudentsCSV,
         importDatabaseJSON,
+        restoreDatabaseFromDB,
         importStudentsBulk,
         resetDatabase,
         resetToInitialData,

@@ -53,6 +53,7 @@ interface TopbarProps {
   onOpenActivityLogs?: () => void;
   setActiveTab?: (tab: ActiveTab) => void;
   onSelectStudentDetail: (studentId: string) => void;
+  onOpenRestoreDatabase?: () => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -64,6 +65,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   onOpenActivityLogs,
   setActiveTab,
   onSelectStudentDetail,
+  onOpenRestoreDatabase,
 }) => {
   const handleToggle = onToggleSidebar || onOpenSidebar || (() => {});
   const handleActivityLogs = onOpenActivityLogs || onOpenActivityLog || (() => {});
@@ -89,10 +91,9 @@ export const Topbar: React.FC<TopbarProps> = ({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
-  const [isEditLogoDropdownOpen, setIsEditLogoDropdownOpen] = useState(false);
   const [isEditLogoModalOpen, setIsEditLogoModalOpen] = useState(false);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
-  const [editLogoInitialTab, setEditLogoInitialTab] = useState<'tutwuri' | 'custom' | 'stempel'>('tutwuri');
+  const [editLogoInitialTab, setEditLogoInitialTab] = useState<'kiri' | 'kanan' | 'stempel' | 'custom'>('kiri');
 
   // Filter student results for instant search
   const searchResults = searchQuery.trim() === '' ? [] : students.filter(s => 
@@ -234,6 +235,18 @@ export const Topbar: React.FC<TopbarProps> = ({
           </button>
         )}
 
+        {/* Kembalikan Database (.db) Quick Button */}
+        {currentRole === 'admin' && (
+          <button
+            onClick={onOpenRestoreDatabase}
+            className="p-2 sm:px-2.5 sm:py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-colors flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+            title="Kembalikan Basis Data (.db)"
+          >
+            <RotateCcw className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <span className="hidden xl:inline">Kembalikan DB</span>
+          </button>
+        )}
+
         {/* Export / Cetak Dropdown */}
         <div className="relative">
           <button
@@ -248,7 +261,7 @@ export const Topbar: React.FC<TopbarProps> = ({
           {isExportMenuOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setIsExportMenuOpen(false)} />
-              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-1.5 z-50 divide-y divide-slate-100 dark:divide-slate-800">
+              <div className="absolute right-0 mt-2 w-60 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-1.5 z-50 divide-y divide-slate-100 dark:divide-slate-800">
                 <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase">
                   Opsi Ekspor / Backup
                 </div>
@@ -295,6 +308,26 @@ export const Topbar: React.FC<TopbarProps> = ({
                   <Printer className="w-4 h-4 text-amber-600" />
                   <span>Cetak Tampilan Layar (PDF)</span>
                 </button>
+
+                {/* Pemulihan Data Option */}
+                <div className="pt-1">
+                  <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase">
+                    PEMULIHAN BASIS DATA
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (onOpenRestoreDatabase) onOpenRestoreDatabase();
+                      setIsExportMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 flex items-center gap-2 font-medium"
+                  >
+                    <RotateCcw className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <div>
+                      <span className="font-bold block">Kembalikan Database (.db)</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">Pulihkan arsip siswa dari berkas .db</span>
+                    </div>
+                  </button>
+                </div>
               </div>
             </>
           )}
@@ -335,303 +368,47 @@ export const Topbar: React.FC<TopbarProps> = ({
           )}
         </button>
 
-        {/* Menu Edit Logo & Lambang Sekolah (Sebelah Kanan) */}
+        {/* Menu Kelola Logo Sekolah (Sebelah Kanan) */}
         <div className="relative pl-1 border-l border-slate-200 dark:border-slate-800">
           <button
             id="btn-menu-edit-logo-topbar"
-            onClick={() => setIsEditLogoDropdownOpen(!isEditLogoDropdownOpen)}
-            className={cn(
-              "group relative flex items-center gap-2 p-1 sm:px-2.5 sm:py-1.5 rounded-xl border transition-all cursor-pointer shadow-xs",
-              isEditLogoDropdownOpen
-                ? "bg-amber-50 dark:bg-amber-950/50 border-amber-400 text-amber-900 dark:text-amber-200 ring-2 ring-amber-400/30"
-                : "bg-white dark:bg-slate-800 hover:bg-amber-50/70 dark:hover:bg-slate-750 border-slate-200 dark:border-slate-700 hover:border-amber-300"
-            )}
-            title="Buka Menu Edit Logo Sekolah, Lambang Tut Wuri & Cap Stempel"
+            onClick={() => {
+              setEditLogoInitialTab('kiri');
+              setIsEditLogoModalOpen(true);
+            }}
+            className="group relative flex items-center gap-2 p-1 sm:px-2.5 sm:py-1.5 rounded-xl border transition-all cursor-pointer shadow-xs bg-white dark:bg-slate-800 hover:bg-amber-50/70 dark:hover:bg-slate-750 border-slate-200 dark:border-slate-700 hover:border-amber-300"
+            title="Kelola Logo: Unggah Logo Sebelah Kiri, Kanan, & Cap Stempel"
           >
             {/* Logo Thumbnail preview */}
             <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-0.5 shadow-xs border border-amber-300/80 shrink-0 group-hover:scale-105 transition-transform overflow-hidden relative">
-              <OfficialNationalLogo 
-                logoIdOrUrl={schoolProfile.tutWuriLogoUrl} 
-                className="w-7 h-7" 
-              />
+              {(schoolProfile.logoKiriUrl || schoolProfile.logoUrl) ? (
+                <img 
+                  src={schoolProfile.logoKiriUrl || schoolProfile.logoUrl} 
+                  alt="Logo Sekolah" 
+                  className="w-full h-full object-contain" 
+                  referrerPolicy="no-referrer" 
+                />
+              ) : (
+                <TutWuriHandayaniSDLogo className="w-7 h-7" />
+              )}
               <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-amber-300">
                 <Pencil className="w-3 h-3" />
               </div>
             </div>
 
-            {/* Menu Label & SD Badge */}
+            {/* Menu Label */}
             <div className="hidden sm:flex flex-col text-left leading-tight pr-0.5">
               <div className="flex items-center gap-1.5">
                 <span className="text-[11px] font-black text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-1">
                   <ImageIcon className="w-3 h-3 text-amber-500 shrink-0" />
-                  Edit Logo
-                </span>
-                <span className="px-1.5 py-0.2 bg-gradient-to-r from-red-600 to-amber-600 text-white font-black text-[9px] rounded-sm uppercase shadow-xs">
-                  SD / MI
+                  Kelola Logo
                 </span>
               </div>
               <span className="text-[9px] text-slate-500 dark:text-slate-400 font-medium truncate max-w-[110px]">
-                {schoolProfile.tutWuriLogoUrl === 'preset:tut-wuri-emas' ? 'Kemdikbud Emas' : 
-                 schoolProfile.tutWuriLogoUrl === 'preset:kemenag-mi' ? 'Kemenag MI' : 
-                 schoolProfile.tutWuriLogoUrl === 'preset:tut-wuri-smp' ? 'Tut Wuri SMP' :
-                 schoolProfile.tutWuriLogoUrl === 'preset:tut-wuri-sma' ? 'Tut Wuri SMA' :
-                 schoolProfile.tutWuriLogoUrl === 'preset:garuda' ? 'Garuda RI' :
-                 schoolProfile.tutWuriLogoUrl && !schoolProfile.tutWuriLogoUrl.startsWith('preset:') ? 'Kustom' : 'Tut Wuri SD'}
+                {schoolProfile.logoKiriUrl || schoolProfile.logoUrl ? 'Logo Kiri Terpasang' : 'Unggah Logo Kiri'}
               </span>
             </div>
-
-            <ChevronDown className={cn(
-              "w-3.5 h-3.5 text-slate-500 dark:text-slate-400 transition-transform",
-              isEditLogoDropdownOpen && "rotate-180 text-amber-600"
-            )} />
           </button>
-
-          {/* Edit Logo Dropdown Menu (Kanan Atas) */}
-          {isEditLogoDropdownOpen && (
-            <>
-              <div 
-                className="fixed inset-0 z-40" 
-                onClick={() => setIsEditLogoDropdownOpen(false)} 
-              />
-              <div 
-                id="dropdown-menu-edit-logo"
-                className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 py-3 z-50 animate-in fade-in zoom-in-95 duration-150 divide-y divide-slate-100 dark:divide-slate-800"
-              >
-                {/* Header Menu */}
-                <div className="px-4 pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
-                        <ImageIcon className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-black text-slate-900 dark:text-slate-100 tracking-wide">
-                          MENU EDIT LOGO SEKOLAH
-                        </div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                          Pengaturan Lambang & Kop Dokumen
-                        </div>
-                      </div>
-                    </div>
-                    <span className="px-2 py-0.5 text-[9px] font-extrabold bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 rounded-full">
-                      Kanan Atas
-                    </span>
-                  </div>
-
-                  {/* Active Logo Status Card */}
-                  <div className="mt-3 p-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-lg bg-white dark:bg-slate-900 p-1 flex items-center justify-center shadow-xs border border-amber-300 shrink-0">
-                      <OfficialNationalLogo 
-                        logoIdOrUrl={schoolProfile.tutWuriLogoUrl} 
-                        className="w-9 h-9" 
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">
-                        {schoolProfile.namaSekolah}
-                      </div>
-                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                        <Check className="w-3 h-3" />
-                        Logo aktif: {
-                          schoolProfile.tutWuriLogoUrl === 'preset:tut-wuri-emas' ? 'Tut Wuri Emas Kemdikbud' :
-                          schoolProfile.tutWuriLogoUrl === 'preset:kemenag-mi' ? 'Kemenag RI (Madrasah)' :
-                          schoolProfile.tutWuriLogoUrl === 'preset:tut-wuri-smp' ? 'Tut Wuri SMP' :
-                          schoolProfile.tutWuriLogoUrl === 'preset:tut-wuri-sma' ? 'Tut Wuri SMA' :
-                          schoolProfile.tutWuriLogoUrl === 'preset:garuda' ? 'Garuda RI' :
-                          schoolProfile.tutWuriLogoUrl && !schoolProfile.tutWuriLogoUrl.startsWith('preset:') ? 'Lambang Kustom' : 'Tut Wuri Handayani SD (Resmi)'
-                        }
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quick Presets */}
-                <div className="px-4 py-2.5 space-y-2 bg-slate-50/50 dark:bg-slate-800/40">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                    <span>PILIH LAMBANG CEPAT (1-KLIK)</span>
-                    <Sparkles className="w-3 h-3 text-amber-500" />
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {/* Preset 1: SD */}
-                    <button
-                      onClick={() => {
-                        updateSchoolProfile({
-                          ...schoolProfile,
-                          tutWuriLogoUrl: 'preset:tut-wuri-sd'
-                        });
-                        logActivity('Perbarui Logo', 'Menerapkan lambang Tut Wuri Handayani SD');
-                        setIsEditLogoDropdownOpen(false);
-                      }}
-                      className={cn(
-                        "p-2 rounded-xl border text-left flex flex-col items-center gap-1.5 transition-all cursor-pointer",
-                        (!schoolProfile.tutWuriLogoUrl || schoolProfile.tutWuriLogoUrl === 'preset:tut-wuri-sd')
-                          ? "bg-amber-50 dark:bg-amber-950/60 border-amber-400 text-amber-900 dark:text-amber-200 ring-1 ring-amber-400"
-                          : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-blue-400 hover:bg-blue-50/50"
-                      )}
-                    >
-                      <TutWuriHandayaniSDLogo className="w-7 h-7 shrink-0" />
-                      <span className="text-[10px] font-bold text-center leading-tight">
-                        Tut Wuri SD
-                      </span>
-                    </button>
-
-                    {/* Preset 2: Kemdikbud Emas */}
-                    <button
-                      onClick={() => {
-                        updateSchoolProfile({
-                          ...schoolProfile,
-                          tutWuriLogoUrl: 'preset:tut-wuri-emas'
-                        });
-                        logActivity('Perbarui Logo', 'Menerapkan lambang Kemdikbudristek Emas');
-                        setIsEditLogoDropdownOpen(false);
-                      }}
-                      className={cn(
-                        "p-2 rounded-xl border text-left flex flex-col items-center gap-1.5 transition-all cursor-pointer",
-                        schoolProfile.tutWuriLogoUrl === 'preset:tut-wuri-emas'
-                          ? "bg-amber-50 dark:bg-amber-950/60 border-amber-400 text-amber-900 dark:text-amber-200 ring-1 ring-amber-400"
-                          : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-amber-400 hover:bg-amber-50/50"
-                      )}
-                    >
-                      <TutWuriHandayaniKemdikbudLogo className="w-7 h-7 shrink-0" />
-                      <span className="text-[10px] font-bold text-center leading-tight">
-                        Kemdikbud Emas
-                      </span>
-                    </button>
-
-                    {/* Preset 3: Kemenag MI */}
-                    <button
-                      onClick={() => {
-                        updateSchoolProfile({
-                          ...schoolProfile,
-                          tutWuriLogoUrl: 'preset:kemenag-mi'
-                        });
-                        logActivity('Perbarui Logo', 'Menerapkan lambang Kemenag RI Madrasah');
-                        setIsEditLogoDropdownOpen(false);
-                      }}
-                      className={cn(
-                        "p-2 rounded-xl border text-left flex flex-col items-center gap-1.5 transition-all cursor-pointer",
-                        schoolProfile.tutWuriLogoUrl === 'preset:kemenag-mi'
-                          ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-400 text-emerald-900 dark:text-emerald-200 ring-1 ring-emerald-400"
-                          : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-emerald-400 hover:bg-emerald-50/50"
-                      )}
-                    >
-                      <KemenagMadrasahLogo className="w-7 h-7 shrink-0" />
-                      <span className="text-[10px] font-bold text-center leading-tight">
-                        Kemenag MI
-                      </span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Menu Actions */}
-                <div className="p-2 space-y-1">
-                  <button
-                    onClick={() => {
-                      setEditLogoInitialTab('custom');
-                      setIsEditLogoModalOpen(true);
-                      setIsEditLogoDropdownOpen(false);
-                    }}
-                    className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-xs transition-colors cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <Upload className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-bold text-slate-800 dark:text-slate-100">
-                          Unggah Logo Khusus Sekolah
-                        </div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                          Upload file PNG/JPG transparan atau masukkan URL
-                        </div>
-                      </div>
-                    </div>
-                    <span className="text-[11px] text-blue-600 dark:text-blue-400 font-bold group-hover:translate-x-0.5 transition-transform">→</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setEditLogoInitialTab('stempel');
-                      setIsEditLogoModalOpen(true);
-                      setIsEditLogoDropdownOpen(false);
-                    }}
-                    className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-xs transition-colors cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <ShieldCheck className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-bold text-slate-800 dark:text-slate-100">
-                          Kelola Cap / Stempel Sekolah
-                        </div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                          Atur stempel resmi untuk ijazah, raport & kartu
-                        </div>
-                      </div>
-                    </div>
-                    <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold group-hover:translate-x-0.5 transition-transform">→</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setEditLogoInitialTab('tutwuri');
-                      setIsEditLogoModalOpen(true);
-                      setIsEditLogoDropdownOpen(false);
-                    }}
-                    className="w-full px-3 py-2 text-left rounded-xl bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 flex items-center justify-between text-xs transition-colors cursor-pointer group border border-blue-200/60 dark:border-blue-800/60"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
-                        <Pencil className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-bold text-blue-950 dark:text-blue-100">
-                          Buka Editor Logo Lengkap
-                        </div>
-                        <div className="text-[10px] text-blue-700 dark:text-blue-300">
-                          Pratinjau kop surat, ijazah & kartu pelajar
-                        </div>
-                      </div>
-                    </div>
-                    <span className="text-xs text-blue-600 dark:text-blue-400 font-extrabold group-hover:translate-x-0.5 transition-transform">Buka →</span>
-                  </button>
-                </div>
-
-                {/* Footer Reset & Identitas */}
-                <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between text-[11px]">
-                  <button
-                    onClick={() => {
-                      if (confirm('Kembalikan logo sekolah ke standar Tut Wuri Handayani SD?')) {
-                        updateSchoolProfile({
-                          ...schoolProfile,
-                          logoUrl: '',
-                          tutWuriLogoUrl: 'preset:tut-wuri-sd'
-                        });
-                        logActivity('Reset Logo', 'Mengembalikan logo ke standar Tut Wuri Handayani SD');
-                        setIsEditLogoDropdownOpen(false);
-                      }
-                    }}
-                    className="flex items-center gap-1.5 text-slate-500 hover:text-red-600 dark:hover:text-red-400 font-medium transition-colors cursor-pointer"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Reset Default SD</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setActiveTab?.('school-profile');
-                      setIsEditLogoDropdownOpen(false);
-                    }}
-                    className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-bold cursor-pointer"
-                  >
-                    <School className="w-3.5 h-3.5" />
-                    <span>Profil Sekolah</span>
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
         </div>
 
         {/* User Role Switcher Dropdown */}

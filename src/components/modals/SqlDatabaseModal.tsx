@@ -12,7 +12,8 @@ import {
   UploadCloud, 
   DownloadCloud, 
   UserCheck, 
-  Sparkles
+  Sparkles,
+  RotateCcw
 } from 'lucide-react';
 import { auth, googleAuthProvider } from '../../lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
@@ -27,9 +28,14 @@ import {
 interface SqlDatabaseModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenRestoreDatabase?: () => void;
 }
 
-export const SqlDatabaseModal: React.FC<SqlDatabaseModalProps> = ({ isOpen, onClose }) => {
+export const SqlDatabaseModal: React.FC<SqlDatabaseModalProps> = ({ 
+  isOpen, 
+  onClose,
+  onOpenRestoreDatabase 
+}) => {
   const { students, schoolProfile, activityLogs, setStudents, logActivity, exportDatabaseDB } = useSchool();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [status, setStatus] = useState<SqlStatusResponse | null>(null);
@@ -323,26 +329,54 @@ export const SqlDatabaseModal: React.FC<SqlDatabaseModalProps> = ({ isOpen, onCl
             </button>
 
             {/* Offline .db Export Quick Action */}
-            <button
-              type="button"
-              onClick={() => exportDatabaseDB()}
-              className="col-span-1 sm:col-span-2 p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-800/80 bg-indigo-50/70 dark:bg-indigo-950/30 hover:bg-indigo-100/70 dark:hover:bg-indigo-900/40 text-indigo-900 dark:text-indigo-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-indigo-600 text-white shrink-0">
-                  <Database className="w-4 h-4" />
-                </div>
-                <div className="text-left">
-                  <div className="font-bold text-xs">Ekspor Basis Data Siswa (.db) Offline</div>
-                  <div className="text-[11px] text-slate-600 dark:text-slate-400">
-                    Unduh snapshot basis data {students.length} siswa saat ini sebagai file .db untuk pencadangan mandiri tanpa internet.
+            <div className="col-span-1 sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => exportDatabaseDB()}
+                className="p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-800/80 bg-indigo-50/70 dark:bg-indigo-950/30 hover:bg-indigo-100/70 dark:hover:bg-indigo-900/40 text-indigo-900 dark:text-indigo-200 flex flex-col justify-between gap-3 transition-all text-left"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-indigo-600 text-white shrink-0">
+                    <Database className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-xs">Ekspor Basis Data Siswa (.db)</div>
+                    <div className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                      Unduh snapshot basis data {students.length} siswa sebagai file .db mandiri.
+                    </div>
                   </div>
                 </div>
-              </div>
-              <span className="text-xs font-bold px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shrink-0 shadow-xs">
-                Unduh .db Offline
-              </span>
-            </button>
+                <span className="text-xs font-bold px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg self-end shrink-0 shadow-xs">
+                  Unduh .db Offline
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenRestoreDatabase) {
+                    onClose();
+                    onOpenRestoreDatabase();
+                  }
+                }}
+                className="p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-800/80 bg-amber-50/60 dark:bg-amber-950/20 hover:bg-amber-100/60 dark:hover:bg-amber-900/30 text-slate-900 dark:text-slate-100 flex flex-col justify-between gap-3 transition-all text-left"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-amber-600 text-white shrink-0">
+                    <RotateCcw className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-xs">Kembalikan Basis Data (.db)</div>
+                    <div className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                      Pulihkan data siswa dari file .db atau .json cadangan sebelumnya.
+                    </div>
+                  </div>
+                </div>
+                <span className="text-xs font-bold px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg self-end shrink-0 shadow-xs">
+                  Kembalikan .db
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* Database Schema Details Info */}

@@ -38,12 +38,14 @@ interface AdminSettingsViewProps {
   setActiveTab: (tab: ActiveTab) => void;
   onOpenActivityLogs?: () => void;
   onBack?: () => void;
+  onOpenRestoreDatabase?: () => void;
 }
 
 export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({
   setActiveTab,
   onOpenActivityLogs,
   onBack,
+  onOpenRestoreDatabase,
 }) => {
   const {
     currentRole,
@@ -965,12 +967,17 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({
               {/* Card Pulihkan / Restore dari File .db / .json */}
               <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/40 flex flex-col justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold text-xs">
-                    <Upload className="w-4 h-4 text-blue-600" />
-                    <span>Pulihkan dari File (.db / .json)</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold text-xs">
+                      <RotateCcw className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <span>Kembalikan Basis Data (.db / .json)</span>
+                    </div>
+                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 rounded">
+                      Menu Resmi
+                    </span>
                   </div>
                   <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                    Unggah kembali file cadangan <strong>.db</strong> atau <strong>.json</strong> untuk memulihkan seluruh data siswa dan konfigurasi sistem.
+                    Buka menu dialog pemulihan lengkap untuk pratinjau data siswa, perbandingan arsip, pilihan mode timpa/gabung, dan verifikasi PIN admin.
                   </p>
                 </div>
 
@@ -1007,14 +1014,31 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({
                   }}
                 />
 
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 text-xs font-bold rounded-xl transition-all cursor-pointer"
-                >
-                  <Upload className="w-4 h-4 text-blue-600" />
-                  <span>Pilih File .db / .json untuk Restore</span>
-                </button>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onOpenRestoreDatabase) {
+                        onOpenRestoreDatabase();
+                      } else {
+                        fileInputRef.current?.click();
+                      }
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Buka Menu Kembalikan Database (.db)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 text-[11px] font-semibold rounded-lg transition-all cursor-pointer"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Unggah Cepat Berkas .db / .json</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

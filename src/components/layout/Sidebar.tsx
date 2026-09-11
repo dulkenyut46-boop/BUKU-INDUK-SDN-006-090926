@@ -25,7 +25,9 @@ import {
   Camera,
   Stamp,
   Sun,
-  Moon
+  Moon,
+  RotateCcw,
+  Database
 } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
 import { cn } from '../../lib/utils';
@@ -57,6 +59,7 @@ interface SidebarProps {
   setIsOpen?: (open: boolean) => void;
   onClose?: () => void;
   onOpenEditLogo?: () => void;
+  onOpenRestoreDatabase?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -66,6 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setIsOpen,
   onClose,
   onOpenEditLogo,
+  onOpenRestoreDatabase,
 }) => {
   const { schoolProfile, currentRole, students, adminUsers, logout, darkMode, toggleDarkMode } = useSchool();
   const [isEditLogoModalOpen, setIsEditLogoModalOpen] = useState(false);
@@ -169,6 +173,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       roles: ['admin'],
       category: 'PENGATURAN',
     },
+    {
+      id: 'restore-database' as any,
+      label: 'Kembalikan Database (.db)',
+      icon: RotateCcw,
+      badge: '.db',
+      badgeColor: 'bg-indigo-400 text-slate-950 font-bold',
+      roles: ['admin'],
+      category: 'PENGATURAN',
+      isModalAction: true,
+    },
   ];
 
   // Group menus by category
@@ -210,9 +224,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="relative group w-10 h-10 rounded-xl bg-white/10 p-1 flex items-center justify-center text-slate-950 font-black shadow-md shrink-0 border border-white/20 hover:border-amber-400 hover:scale-105 transition-all cursor-pointer overflow-hidden"
                   title="Klik untuk Mengubah Logo & Lambang Sekolah"
                 >
-                  {schoolProfile.logoUrl ? (
+                  {(schoolProfile.logoKiriUrl || schoolProfile.logoUrl) ? (
                     <img 
-                      src={schoolProfile.logoUrl} 
+                      src={schoolProfile.logoKiriUrl || schoolProfile.logoUrl} 
                       alt="Logo Sekolah" 
                       className="w-full h-full object-contain"
                       referrerPolicy="no-referrer"
@@ -256,9 +270,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="relative group w-10 h-10 rounded-xl bg-white/10 p-1 flex items-center justify-center text-slate-950 font-black shadow-md shrink-0 border border-white/20 hover:border-amber-400 hover:scale-105 transition-all cursor-pointer overflow-hidden"
               title="Klik untuk Lebarkan Menu Samping"
             >
-              {schoolProfile.logoUrl ? (
+              {(schoolProfile.logoKiriUrl || schoolProfile.logoUrl) ? (
                 <img 
-                  src={schoolProfile.logoUrl} 
+                  src={schoolProfile.logoKiriUrl || schoolProfile.logoUrl} 
                   alt="Logo Sekolah" 
                   className="w-full h-full object-contain"
                   referrerPolicy="no-referrer"
@@ -336,7 +350,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <button
                       key={item.id}
                       onClick={() => {
-                        if (item.isModalAction || item.id === 'edit-logo') {
+                        if (item.id === ('restore-database' as any)) {
+                          if (onOpenRestoreDatabase) {
+                            onOpenRestoreDatabase();
+                          }
+                        } else if (item.isModalAction || item.id === 'edit-logo') {
                           handleOpenEditLogo();
                         } else {
                           setActiveTab(item.id);

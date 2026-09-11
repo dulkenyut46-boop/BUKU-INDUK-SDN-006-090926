@@ -19,7 +19,8 @@ import {
   ChevronRight,
   Share2,
   History,
-  Database
+  Database,
+  RotateCcw
 } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
 import { ActiveTab } from '../layout/Sidebar';
@@ -30,12 +31,14 @@ interface LaporanViewProps {
   setActiveTab: (tab: ActiveTab) => void;
   onOpenActivityLogs?: () => void;
   onBack?: () => void;
+  onOpenRestoreDatabase?: () => void;
 }
 
 export const LaporanView: React.FC<LaporanViewProps> = ({
   setActiveTab,
   onOpenActivityLogs,
   onBack,
+  onOpenRestoreDatabase,
 }) => {
   const { 
     students, 
@@ -195,6 +198,26 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
       badgeColor: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300',
       actionLabel: 'Unduh File .DB Offline',
       onAction: () => exportDatabaseDB(),
+    },
+    {
+      id: 'restore-db',
+      title: 'Kembalikan Basis Data Siswa (.DB)',
+      subtitle: 'Pemulihan dari File Cadangan .DB',
+      description: 'Pulihkan seluruh data siswa, profil sekolah, nilai raport, dan arsip buku induk dari file cadangan .db atau .json.',
+      category: 'ekspor',
+      icon: RotateCcw,
+      iconBg: 'bg-indigo-50 dark:bg-indigo-950/60',
+      iconColor: 'text-indigo-600 dark:text-indigo-400',
+      badge: 'Format .DB',
+      badgeColor: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+      actionLabel: 'Buka Menu Kembalikan DB',
+      onAction: () => {
+        if (onOpenRestoreDatabase) {
+          onOpenRestoreDatabase();
+        } else {
+          setActiveTab('admin-settings');
+        }
+      },
     },
     {
       id: 'export-csv',

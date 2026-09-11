@@ -44,16 +44,16 @@ export const KopSuratHeader: React.FC<KopSuratHeaderProps> = ({
       <div className="flex items-center justify-between gap-4">
         {/* LOGO KIRI: Logo Satuan Pendidikan / Lambang Pemda */}
         <div className="w-18 h-18 flex items-center justify-center shrink-0">
-          {schoolProfile.logoUrl && !schoolProfile.logoUrl.startsWith('preset:') ? (
+          {(schoolProfile.logoKiriUrl || schoolProfile.logoUrl) && !(schoolProfile.logoKiriUrl || schoolProfile.logoUrl)?.startsWith('preset:') ? (
             <img
-              src={schoolProfile.logoUrl}
-              alt="Logo Sekolah (Kiri)"
+              src={schoolProfile.logoKiriUrl || schoolProfile.logoUrl}
+              alt="Logo Sebelah Kiri (Kop)"
               className="max-w-16 max-h-16 object-contain"
               referrerPolicy="no-referrer"
             />
-          ) : schoolProfile.logoUrl && schoolProfile.logoUrl.startsWith('preset:') ? (
+          ) : (schoolProfile.logoKiriUrl || schoolProfile.logoUrl)?.startsWith('preset:') ? (
             <OfficialNationalLogo
-              logoIdOrUrl={schoolProfile.logoUrl}
+              logoIdOrUrl={schoolProfile.logoKiriUrl || schoolProfile.logoUrl}
               className="w-16 h-16"
             />
           ) : (
@@ -86,10 +86,19 @@ export const KopSuratHeader: React.FC<KopSuratHeaderProps> = ({
 
         {/* LOGO KANAN: Lambang Resmi Nasional / Tut Wuri Handayani */}
         <div className="w-18 h-18 flex items-center justify-center shrink-0">
-          <OfficialNationalLogo
-            logoIdOrUrl={schoolProfile.tutWuriLogoUrl}
-            className="w-16 h-16"
-          />
+          {schoolProfile.logoKananUrl && !schoolProfile.logoKananUrl.startsWith('preset:') ? (
+            <img
+              src={schoolProfile.logoKananUrl}
+              alt="Logo Sebelah Kanan (Kop)"
+              className="max-w-16 max-h-16 object-contain"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <OfficialNationalLogo
+              logoIdOrUrl={schoolProfile.logoKananUrl || schoolProfile.tutWuriLogoUrl || 'preset:tut-wuri-sd'}
+              className="w-16 h-16"
+            />
+          )}
         </div>
       </div>
 

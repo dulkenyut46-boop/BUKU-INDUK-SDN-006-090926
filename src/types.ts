@@ -211,7 +211,9 @@ export interface SchoolProfile {
   namaOperator: string;
   nipOperator: string;
   kurikulum: string;
-  logoUrl?: string;
+  logoUrl?: string; // Logo utama sekolah
+  logoKiriUrl?: string; // Logo sebelah kiri kop surat (Lambang Pemda / Daerah / Sekolah Kiri)
+  logoKananUrl?: string; // Logo sebelah kanan kop surat (Tut Wuri Handayani / Logo Kanan)
   tutWuriLogoUrl?: string;
   stempelUrl?: string;
   tahunPelajaranAktif?: string; // e.g. "2025/2026"
