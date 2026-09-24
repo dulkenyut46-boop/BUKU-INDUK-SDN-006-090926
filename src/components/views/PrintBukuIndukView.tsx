@@ -343,22 +343,25 @@ export const PrintBukuIndukView: React.FC<PrintBukuIndukViewProps> = ({
             </table>
           </div>
 
-          {/* Page 1 Bottom Footer & Photo Box */}
+          {/* Page 1 Bottom Footer & Photo Box (Ukuran Pas Foto Lebih Besar & Jelas) */}
           <div className="pt-4 flex justify-between items-end">
-            <div className="w-24 h-32 border-2 border-dashed border-slate-600 flex flex-col items-center justify-center text-[10px] text-slate-500 font-sans text-center p-1 bg-slate-50 print:bg-transparent">
+            <div className="w-32 h-44 sm:w-36 sm:h-48 border-2 border-slate-700 rounded-sm flex flex-col items-center justify-center text-[11px] text-slate-600 font-sans text-center p-1.5 bg-slate-50 print:bg-transparent shadow-xs">
               {student?.fotoUrl && !isBlankMode ? (
                 <img
                   src={student.fotoUrl}
-                  alt="Pas Foto"
-                  className="w-full h-full object-cover print:opacity-100"
+                  alt="Pas Foto Siswa"
+                  className="w-full h-full object-cover rounded-xs print:opacity-100 shadow-2xs"
                   referrerPolicy="no-referrer"
                   crossOrigin="anonymous"
                 />
               ) : (
                 <>
-                  <span>PAS FOTO</span>
-                  <span className="font-bold">3 x 4 cm</span>
-                  <span className="text-[8px] mt-1 text-slate-400">Cap Stempel Sekolah</span>
+                  <div className="w-7 h-7 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center mb-1 text-slate-600 font-bold text-xs">
+                    3:4
+                  </div>
+                  <span className="font-black text-xs text-slate-800">PAS FOTO</span>
+                  <span className="font-bold text-slate-700">3 x 4 cm</span>
+                  <span className="text-[8.5px] mt-1 text-slate-500">Cap Stempel Sekolah</span>
                 </>
               )}
             </div>

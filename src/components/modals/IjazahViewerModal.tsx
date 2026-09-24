@@ -8,6 +8,8 @@ interface IjazahViewerModalProps {
   onClose: () => void;
   imageUrl?: string;
   student?: Student | null;
+  title?: string;
+  subtitle?: string;
 }
 
 export const IjazahViewerModal: React.FC<IjazahViewerModalProps> = ({
@@ -15,6 +17,8 @@ export const IjazahViewerModal: React.FC<IjazahViewerModalProps> = ({
   onClose,
   imageUrl,
   student,
+  title,
+  subtitle,
 }) => {
   const [zoom, setZoom] = useState<number>(1);
   const [rotation, setRotation] = useState<number>(0);
@@ -34,7 +38,8 @@ export const IjazahViewerModal: React.FC<IjazahViewerModalProps> = ({
     a.href = imageUrl;
     const cleanName = student?.namaLengkap ? student.namaLengkap.replace(/[^a-zA-Z0-9]/g, '_') : 'Siswa';
     const nis = student?.noInduk || 'NIS';
-    a.download = `Ijazah_${cleanName}_${nis}.jpg`;
+    const prefix = title?.toLowerCase().includes('foto') ? 'Foto' : 'Ijazah';
+    a.download = `${prefix}_${cleanName}_${nis}.jpg`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -134,14 +139,14 @@ export const IjazahViewerModal: React.FC<IjazahViewerModalProps> = ({
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-extrabold tracking-wide truncate">
-                  Berkas Scan / Gambar Ijazah Resmi
+                  {title || 'Berkas Scan / Gambar Ijazah Resmi'}
                 </h3>
                 <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider shrink-0">
-                  Dokumen Asli
+                  {title ? 'Pratinjau' : 'Dokumen Asli'}
                 </span>
               </div>
               <p className="text-[11px] text-blue-100 truncate">
-                {student ? `${student.namaLengkap} (NIS: ${student.noInduk} • No. Ijazah: ${student.sttb?.noIjazah || '-'})` : 'Lampiran Berkas Siswa'}
+                {subtitle || (student ? `${student.namaLengkap} (NIS: ${student.noInduk} • No. Ijazah: ${student.sttb?.noIjazah || '-'})` : 'Lampiran Berkas Siswa')}
               </p>
             </div>
           </div>

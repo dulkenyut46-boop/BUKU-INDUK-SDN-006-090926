@@ -33,6 +33,7 @@ import { Student } from '../../types';
 import { formatIndonesianDate, cn } from '../../lib/utils';
 import { useSchool } from '../../context/SchoolContext';
 import { 
+  OfficialNationalLogo,
   TutWuriHandayaniSDLogo, 
   TutWuriHandayaniKemdikbudLogo, 
   KemenagMadrasahLogo 
@@ -63,27 +64,38 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
   onSTTB,
   onRaport,
 }) => {
-  const { currentRole, activityLogs, schoolProfile, cancelMutation, rolePermissions, updateFotoIjazah, updateFotoIjazahMutasi } = useSchool();
+  const { currentRole, activityLogs, schoolProfile, cancelMutation, rolePermissions, updateStudent, updateFotoIjazah, updateFotoIjazahMutasi } = useSchool();
   const [activeTab, setActiveTab] = useState<'profil' | 'keluarga' | 'kesehatan' | 'raport' | 'kelulusan' | 'riwayat'>('profil');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [restoreClassChoice, setRestoreClassChoice] = useState('Kelas 1');
 
-  // Ijazah Viewer Lightbox state
+  // Ijazah / Foto Viewer Lightbox state
   const [viewerImageUrl, setViewerImageUrl] = useState<string | null>(null);
+  const [viewerTitle, setViewerTitle] = useState<string>('Berkas Scan / Gambar Ijazah Resmi');
+  const [viewerSubtitle, setViewerSubtitle] = useState<string>('');
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   // Direct quick upload state
-  const [uploadTarget, setUploadTarget] = useState<'sttb' | 'mutasi' | null>(null);
+  const [uploadTarget, setUploadTarget] = useState<'sttb' | 'mutasi' | 'foto' | null>(null);
   const [isCompressingDirect, setIsCompressingDirect] = useState(false);
   const directFileInputRef = React.useRef<HTMLInputElement>(null);
 
   if (!isOpen || !student) return null;
 
-  const handleTriggerDirectUpload = (target: 'sttb' | 'mutasi') => {
+  const handleTriggerDirectUpload = (target: 'sttb' | 'mutasi' | 'foto') => {
     setUploadTarget(target);
     setTimeout(() => {
       directFileInputRef.current?.click();
     }, 50);
+  };
+
+  const handleDownloadFoto = (fotoUrl: string, studentName: string) => {
+    const link = document.createElement('a');
+    link.href = fotoUrl;
+    link.download = `Pas_Foto_${studentName.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleDirectFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,11 +109,16 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 
     setIsCompressingDirect(true);
     try {
-      const res = await compressImageFile(file, 1400, 1400, 0.85);
-      if (uploadTarget === 'sttb') {
-        updateFotoIjazah(student.id, res.dataUrl);
+      if (uploadTarget === 'foto') {
+        const res = await compressImageFile(file, 800, 1000, 0.85);
+        updateStudent(student.id, { fotoUrl: res.dataUrl });
       } else {
-        updateFotoIjazahMutasi(student.id, res.dataUrl);
+        const res = await compressImageFile(file, 1400, 1400, 0.85);
+        if (uploadTarget === 'sttb') {
+          updateFotoIjazah(student.id, res.dataUrl);
+        } else {
+          updateFotoIjazahMutasi(student.id, res.dataUrl);
+        }
       }
     } catch (err: any) {
       alert(err.message || 'Gagal memproses berkas gambar.');
@@ -127,11 +144,25 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header Ribbon (BCA blue & gold badge) */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-[#003399] text-white">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-amber-300 font-extrabold text-xl overflow-hidden border border-white/20">
+          <div className="flex items-center gap-3.5">
+            <div 
+              onClick={() => {
+                if (student.fotoUrl) {
+                  setViewerTitle('Pas Foto Resmi Peserta Didik');
+                  setViewerSubtitle(`${student.namaLengkap} (NIS: ${student.noInduk} • Kelas: ${student.kelasSekarang})`);
+                  setViewerImageUrl(student.fotoUrl);
+                  setIsViewerOpen(true);
+                }
+              }}
+              className={cn(
+                "w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/15 flex items-center justify-center text-amber-300 font-extrabold text-2xl overflow-hidden border-2 border-white/30 shadow-md shrink-0 transition-transform",
+                student.fotoUrl ? "cursor-pointer hover:scale-105 hover:border-amber-300 ring-2 ring-white/20" : ""
+              )}
+              title={student.fotoUrl ? "Klik untuk melihat pas foto ukuran penuh" : student.namaLengkap}
+            >
               {student.fotoUrl ? (
                 <img src={student.fotoUrl} alt={student.namaLengkap} className="w-full h-full object-cover" />
               ) : (
@@ -140,11 +171,11 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base md:text-lg font-extrabold tracking-wide text-white">
+                <h3 className="text-base sm:text-lg md:text-xl font-extrabold tracking-wide text-white">
                   {student.namaLengkap}
                 </h3>
                 <span className={cn(
-                  "px-2.5 py-0.5 text-[10px] font-extrabold rounded-full uppercase",
+                  "px-2.5 py-0.5 text-[10px] font-extrabold rounded-full uppercase shrink-0",
                   student.status === 'Aktif' ? 'bg-emerald-400 text-slate-950' :
                   student.status === 'Lulus' ? 'bg-amber-400 text-slate-950' : 'bg-rose-400 text-slate-950'
                 )}>
@@ -162,20 +193,30 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Tut Wuri Handayani SD Emblem */}
-            <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-white/10 rounded-xl border border-white/20">
-              <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center p-0.5">
-                {schoolProfile.tutWuriLogoUrl === 'preset:tut-wuri-emas' ? (
-                  <TutWuriHandayaniKemdikbudLogo className="w-6 h-6" />
-                ) : schoolProfile.tutWuriLogoUrl === 'preset:kemenag-mi' ? (
-                  <KemenagMadrasahLogo className="w-6 h-6" />
+            {/* Logo Kanan (Diselaraskan dengan Logo Kanan Kop Surat Sekolah) */}
+            <div className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 bg-white/15 rounded-xl border border-white/20 shadow-xs">
+              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-0.5 shrink-0 overflow-hidden shadow-2xs">
+                {schoolProfile.logoKananUrl && !schoolProfile.logoKananUrl.startsWith('preset:') ? (
+                  <img
+                    src={schoolProfile.logoKananUrl}
+                    alt="Logo Kanan Kop"
+                    className="w-full h-full object-contain"
+                    referrerPolicy="no-referrer"
+                  />
                 ) : (
-                  <TutWuriHandayaniSDLogo className="w-6 h-6" />
+                  <OfficialNationalLogo
+                    logoIdOrUrl={schoolProfile.logoKananUrl || schoolProfile.tutWuriLogoUrl || 'preset:tut-wuri-sd'}
+                    className="w-7 h-7"
+                  />
                 )}
               </div>
               <div className="text-left leading-tight pr-1">
-                <div className="text-[10px] font-black text-amber-300">TUT WURI HANDAYANI</div>
-                <div className="text-[8.5px] text-blue-100 uppercase">{schoolProfile.namaSekolah}</div>
+                <div className="text-[10px] font-black text-amber-300 tracking-wide uppercase">
+                  {schoolProfile.logoKananUrl && !schoolProfile.logoKananUrl.startsWith('preset:') ? 'LOGO KANAN KOP' : 'TUT WURI HANDAYANI'}
+                </div>
+                <div className="text-[8.5px] text-blue-100 font-medium truncate max-w-[160px] uppercase">
+                  {schoolProfile.namaSekolah}
+                </div>
               </div>
             </div>
 
@@ -205,10 +246,28 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
               <CreditCard className="w-3.5 h-3.5" />
               <span>Cetak Kartu Pelajar</span>
             </button>
+            {student.fotoUrl && (
+              <button
+                type="button"
+                onClick={() => {
+                  setViewerTitle('Pas Foto Resmi Peserta Didik');
+                  setViewerSubtitle(`${student.namaLengkap} (NIS: ${student.noInduk} • Kelas: ${student.kelasSekarang})`);
+                  setViewerImageUrl(student.fotoUrl || null);
+                  setIsViewerOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors cursor-pointer"
+                title="Lihat pas foto siswa ukuran besar / penuh"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Lihat Pas Foto</span>
+              </button>
+            )}
             {(student.sttb?.fotoIjazah || student.mutasi?.fotoIjazah) && (
               <button
                 type="button"
                 onClick={() => {
+                  setViewerTitle('Berkas Scan / Gambar Ijazah Resmi');
+                  setViewerSubtitle(`${student.namaLengkap} (NIS: ${student.noInduk} • No. Ijazah: ${student.sttb?.noIjazah || '-'})`);
                   setViewerImageUrl(student.sttb?.fotoIjazah || student.mutasi?.fotoIjazah || null);
                   setIsViewerOpen(true);
                 }}
@@ -335,6 +394,169 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
           {/* TAB 1: PROFIL */}
           {activeTab === 'profil' && (
             <div className="space-y-6">
+              {/* KARTU PAS FOTO RESMI & IDENTITAS UTAMA (FOTO LEBIH BESAR) */}
+              <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-800/50 dark:to-slate-900/60 shadow-xs">
+                <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+                  
+                  {/* Kolom Foto Siswa Ukuran Besar (Proporsi Pas Foto Resmi 3x4) */}
+                  <div className="flex flex-col items-center shrink-0">
+                    <div 
+                      onClick={() => {
+                        if (student.fotoUrl) {
+                          setViewerTitle('Pas Foto Resmi Peserta Didik');
+                          setViewerSubtitle(`${student.namaLengkap} (NIS: ${student.noInduk} • Kelas: ${student.kelasSekarang})`);
+                          setViewerImageUrl(student.fotoUrl);
+                          setIsViewerOpen(true);
+                        }
+                      }}
+                      className={cn(
+                        "w-44 h-56 sm:w-48 sm:h-60 rounded-2xl bg-white dark:bg-slate-800 border-4 border-white dark:border-slate-700 shadow-xl overflow-hidden relative group transition-all",
+                        student.fotoUrl ? "cursor-pointer ring-2 ring-blue-500/20 hover:ring-blue-500/50" : "flex flex-col items-center justify-center p-4 text-center border-dashed border-slate-300 dark:border-slate-700"
+                      )}
+                    >
+                      {student.fotoUrl ? (
+                        <>
+                          <img 
+                            src={student.fotoUrl} 
+                            alt={student.namaLengkap} 
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          {/* Hover overlay hint */}
+                          <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1.5 p-2 text-center backdrop-blur-2xs">
+                            <Eye className="w-6 h-6 text-amber-300" />
+                            <span className="text-[11px] font-bold">Perbesar Foto</span>
+                          </div>
+                          {/* Ratio badge */}
+                          <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-950/70 text-white font-mono text-[9px] font-bold backdrop-blur-xs">
+                            3 x 4 cm
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-2">
+                          <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 mb-2">
+                            <User className="w-8 h-8" />
+                          </div>
+                          <span className="text-xs font-bold text-slate-600 dark:text-slate-400">PAS FOTO</span>
+                          <span className="text-[11px] font-semibold text-slate-500">3 x 4 cm</span>
+                          <span className="text-[9px] text-slate-400 mt-1">Belum diunggah</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action buttons below photo */}
+                    <div className="flex items-center gap-2 mt-3 w-full justify-center">
+                      {student.fotoUrl && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setViewerTitle('Pas Foto Resmi Peserta Didik');
+                              setViewerSubtitle(`${student.namaLengkap} (NIS: ${student.noInduk} • Kelas: ${student.kelasSekarang})`);
+                              setViewerImageUrl(student.fotoUrl || null);
+                              setIsViewerOpen(true);
+                            }}
+                            className="px-2.5 py-1.5 text-xs font-bold bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 border border-slate-300 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-lg shadow-2xs transition-colors flex items-center gap-1 cursor-pointer"
+                            title="Lihat foto siswa ukuran penuh"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Lihat</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadFoto(student.fotoUrl!, student.namaLengkap)}
+                            className="px-2.5 py-1.5 text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg shadow-2xs transition-colors flex items-center gap-1 cursor-pointer"
+                            title="Unduh file foto siswa"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Unduh</span>
+                          </button>
+                        </>
+                      )}
+                      {currentRole !== 'umum' && (
+                        <button
+                          type="button"
+                          onClick={() => handleTriggerDirectUpload('foto')}
+                          disabled={isCompressingDirect}
+                          className="px-2.5 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-2xs transition-colors flex items-center gap-1 cursor-pointer"
+                          title="Ganti atau unggah pas foto siswa"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>{student.fotoUrl ? 'Ganti' : 'Unggah'}</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Informasi Ringkas Profil & Status */}
+                  <div className="flex-1 w-full space-y-4">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span className="px-2.5 py-0.5 text-[10px] font-black uppercase rounded-md bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+                          {student.kelasSekarang}
+                        </span>
+                        <span className={cn(
+                          "px-2.5 py-0.5 text-[10px] font-black uppercase rounded-md",
+                          student.status === 'Aktif' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800' :
+                          student.status === 'Lulus' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-800' :
+                          'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                        )}>
+                          Status: {student.status}
+                        </span>
+                        <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                          Tahun Masuk: {student.tahunMasuk || '-'}
+                        </span>
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                        {student.namaLengkap}
+                      </h3>
+                      {student.namaPanggilan && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          Nama Panggilan: <span className="font-semibold text-slate-700 dark:text-slate-200">"{student.namaPanggilan}"</span>
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Grid Nomor Registrasi Pokok */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xs">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">No. Induk (NIS)</span>
+                        <span className="font-mono text-sm font-extrabold text-blue-700 dark:text-blue-300">{student.noInduk}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xs">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">NISN Resmi</span>
+                        <span className="font-mono text-sm font-extrabold text-amber-600 dark:text-amber-400">{student.nisn}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xs col-span-2 sm:col-span-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">NIK Siswa</span>
+                        <span className="font-mono text-sm font-semibold text-slate-800 dark:text-slate-200">{student.nik}</span>
+                      </div>
+                    </div>
+
+                    {/* Ringkasan Lahir & Identitas */}
+                    <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Tempat, Tanggal Lahir:</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
+                          {student.tempatLahir}, {formatIndonesianDate(student.tanggalLahir)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Jenis Kelamin & Agama:</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {student.jenisKelamin === 'L' ? 'Laki-Laki (L)' : 'Perempuan (P)'} • {student.agama}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Kewarganegaraan & Bahasa:</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {student.kewarganegaraan} • {student.bahasaIbu}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 space-y-3">
                 <h4 className="text-xs font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wider flex items-center gap-2">
@@ -1176,13 +1398,15 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         className="hidden"
       />
 
-      {/* Lightbox / High Resolution Ijazah Viewer Modal */}
+      {/* Lightbox / High Resolution Ijazah & Foto Viewer Modal */}
       {isViewerOpen && viewerImageUrl && (
         <IjazahViewerModal
           isOpen={isViewerOpen}
           onClose={() => setIsViewerOpen(false)}
           imageUrl={viewerImageUrl}
           student={student}
+          title={viewerTitle}
+          subtitle={viewerSubtitle}
         />
       )}
     </div>
