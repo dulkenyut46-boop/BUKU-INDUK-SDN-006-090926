@@ -42,8 +42,39 @@ const MainAppContent: React.FC = () => {
     isAuthenticated
   } = useSchool();
 
-  // Navigation state
-  const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  // Navigation state - automatically switch to public-verify if URL parameters or hash contain verification
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      const verifyParam = urlParams.get('verify') || urlParams.get('nisn') || urlParams.get('id');
+      const hash = window.location.hash || '';
+      if (tabParam === 'public-verify' || verifyParam || hash.startsWith('#verify-')) {
+        return 'public-verify';
+      }
+    }
+    return 'dashboard';
+  });
+
+  // Listen for URL changes (e.g. scanning QR code or navigation with search/hash)
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      const verifyParam = urlParams.get('verify') || urlParams.get('nisn') || urlParams.get('id');
+      const hash = window.location.hash || '';
+      if (tabParam === 'public-verify' || verifyParam || hash.startsWith('#verify-')) {
+        setActiveTab('public-verify');
+      }
+    };
+
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, []);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('buku_induk_sidebar_open');
@@ -282,6 +313,8 @@ const MainAppContent: React.FC = () => {
               <KartuPelajarView
                 selectedStudentId={selectedStudentId}
                 onBack={() => setActiveTab('reports')}
+                setActiveTab={setActiveTab}
+                onSelectStudentDetail={handleSelectStudentDetail}
               />
             )}
 

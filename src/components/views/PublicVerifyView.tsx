@@ -116,6 +116,48 @@ export const PublicVerifyView: React.FC<PublicVerifyViewProps> = ({
     });
   };
 
+  // Auto-search or select student from URL parameters (scanned from Kartu Pelajar QR Code)
+  useEffect(() => {
+    if (typeof window === 'undefined' || students.length === 0) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const verifyTerm = urlParams.get('verify') || urlParams.get('nisn') || '';
+    const studentId = urlParams.get('id') || '';
+    const hash = window.location.hash || '';
+    const hashTerm = hash.startsWith('#verify-') ? decodeURIComponent(hash.replace('#verify-', '')) : '';
+
+    const searchTerm = verifyTerm || hashTerm || '';
+
+    if (studentId || searchTerm) {
+      const match = students.find((s) => 
+        (studentId && s.id === studentId) ||
+        (searchTerm && (
+          normalizeText(s.nisn) === normalizeText(searchTerm) ||
+          normalizeText(s.noInduk) === normalizeText(searchTerm) ||
+          normalizeText(s.id) === normalizeText(searchTerm) ||
+          normalizeText(s.namaLengkap) === normalizeText(searchTerm)
+        ))
+      );
+
+      if (match) {
+        setSelectedStudent(match);
+        setFoundStudents([match]);
+        setSearched(true);
+        setSearchedTerm(match.namaLengkap);
+        setQuery(match.nisn || match.namaLengkap);
+      } else if (searchTerm) {
+        setQuery(searchTerm);
+        const filtered = filterStudents(searchTerm, 'all');
+        const sorted = sortStudents(filtered, searchTerm);
+        setFoundStudents(sorted);
+        setSearched(true);
+        setSearchedTerm(searchTerm);
+        if (sorted.length === 1) {
+          setSelectedStudent(sorted[0]);
+        }
+      }
+    }
+  }, [students]);
+
   // Live suggestions for dropdown while typing
   const liveSuggestions = React.useMemo(() => {
     const trimmed = query.trim();
