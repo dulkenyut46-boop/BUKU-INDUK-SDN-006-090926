@@ -27,7 +27,8 @@ import {
   Sun,
   Moon,
   Database,
-  Upload
+  Upload,
+  Cloud
 } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
 import { UserRole, RolePermissions, AdminUser } from '../../types';
@@ -39,6 +40,7 @@ interface AdminSettingsViewProps {
   onOpenActivityLogs?: () => void;
   onBack?: () => void;
   onOpenRestoreDatabase?: () => void;
+  onOpenGoogleDriveBackup?: () => void;
 }
 
 export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({
@@ -46,6 +48,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({
   onOpenActivityLogs,
   onBack,
   onOpenRestoreDatabase,
+  onOpenGoogleDriveBackup,
 }) => {
   const {
     currentRole,
@@ -191,7 +194,7 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({
         {
           key: 'cetakKartuPelajar',
           label: 'Cetak Kartu Tanda Pelajar & Kartu Ujian',
-          desc: 'Mencetak kartu siswa resmi dilengkapi Barcode/QR Code',
+          desc: 'Mencetak kartu siswa resmi standar ID-1 dilengkapi Barcode & Kop Surat resmi',
         },
         {
           key: 'eksporExcelCSV',
@@ -937,7 +940,39 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
+              {/* Card Cadangan Google Drive */}
+              <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-800/80 bg-linear-to-b from-blue-50/60 to-indigo-50/30 dark:from-blue-950/30 dark:to-indigo-950/20 flex flex-col justify-between gap-3 shadow-xs">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-blue-900 dark:text-blue-300 font-bold text-xs">
+                      <Cloud className="w-4 h-4 text-blue-600" />
+                      <span>Cadangan Google Drive</span>
+                    </div>
+                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 rounded border border-blue-200 dark:border-blue-900">
+                      Cloud Storage
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1.5 leading-relaxed">
+                    Simpan salinan database Buku Induk langsung ke <strong>Google Drive</strong> akun Google Anda (.json / .db) serta pulihkan kembali kapan saja dengan 1-klik.
+                  </p>
+                </div>
+                <div className="space-y-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onOpenGoogleDriveBackup) {
+                        onOpenGoogleDriveBackup();
+                      }
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
+                  >
+                    <Cloud className="w-4 h-4" />
+                    <span>Simpan ke Google Drive</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Card Ekspor .DB Offline */}
               <div className="p-4 rounded-xl border border-indigo-200 dark:border-indigo-800/80 bg-indigo-50/40 dark:bg-indigo-950/20 flex flex-col justify-between gap-3">
                 <div>

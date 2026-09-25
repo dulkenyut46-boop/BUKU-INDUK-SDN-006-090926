@@ -18,7 +18,8 @@ import {
   Users,
   Check,
   RefreshCw,
-  FolderUp
+  FolderUp,
+  Cloud
 } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
 import { parseDbBackupFile, DbBackupParseResult } from '../../utils/dbBackupHelper';
@@ -28,12 +29,14 @@ interface RestoreDatabaseModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  onOpenGoogleDrive?: () => void;
 }
 
 export const RestoreDatabaseModal: React.FC<RestoreDatabaseModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  onOpenGoogleDrive,
 }) => {
   const { 
     students, 
@@ -304,9 +307,25 @@ export const RestoreDatabaseModal: React.FC<RestoreDatabaseModalProps> = ({
                       </p>
                     </div>
 
-                    <span className="mt-1 px-4 py-1.5 bg-[#003399] hover:bg-[#002266] text-white text-xs font-bold rounded-lg shadow-xs transition-colors">
-                      Pilih Berkas .DB dari Komputer
-                    </span>
+                    <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+                      <span className="px-4 py-1.5 bg-[#003399] hover:bg-[#002266] text-white text-xs font-bold rounded-lg shadow-xs transition-colors">
+                        Pilih Berkas .DB dari Komputer
+                      </span>
+                      {onOpenGoogleDrive && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleClose();
+                            onOpenGoogleDrive();
+                          }}
+                          className="px-3.5 py-1.5 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Cloud className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Pilih dari Google Drive</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* ERROR NOTIFICATION */}

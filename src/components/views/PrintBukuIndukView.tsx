@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Printer, ArrowLeft, Download, FileText, CheckCircle2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Printer, ArrowLeft, Download, FileText, CheckCircle2, FileDown, Loader2 } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
 import { formatIndonesianDate } from '../../lib/utils';
 import { Student } from '../../types';
 import { KopSuratHeader } from '../layout/KopSuratHeader';
+import { exportBukuIndukToPdf } from '../../utils/pdfExportHelper';
 
 interface PrintBukuIndukViewProps {
   selectedStudentId?: string;
@@ -19,6 +20,11 @@ export const PrintBukuIndukView: React.FC<PrintBukuIndukViewProps> = ({
     selectedStudentId || (students[0]?.id ?? '')
   );
   const [isBlankMode, setIsBlankMode] = useState<boolean>(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const page1Ref = useRef<HTMLDivElement>(null);
+  const page2Ref = useRef<HTMLDivElement>(null);
 
   const student = students.find((s) => s.id === activeStudentId) || students[0];
 
@@ -28,6 +34,27 @@ export const PrintBukuIndukView: React.FC<PrintBukuIndukViewProps> = ({
       document.activeElement.blur();
     }
     window.print();
+  };
+
+  const handlePrintToPdf = async () => {
+    if (!page1Ref.current || !page2Ref.current) return;
+    try {
+      setIsExportingPdf(true);
+      setExportError(null);
+      await exportBukuIndukToPdf({
+        page1Element: page1Ref.current,
+        page2Element: page2Ref.current,
+        studentName: isBlankMode ? 'Formulir_Kosong' : student?.namaLengkap,
+        nisn: isBlankMode ? undefined : student?.nisn,
+        isBlankMode,
+        schoolName: schoolProfile.namaSekolah,
+      });
+    } catch (err) {
+      console.error('Failed to export Buku Induk PDF:', err);
+      setExportError('Gagal memproses file PDF. Silakan coba kembali.');
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   if (!student && !isBlankMode) {
@@ -83,8 +110,22 @@ export const PrintBukuIndukView: React.FC<PrintBukuIndukViewProps> = ({
           </label>
 
           <button
+            onClick={handlePrintToPdf}
+            disabled={isExportingPdf}
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 text-white text-xs font-extrabold rounded-xl shadow-md transition-transform transform active:scale-95 cursor-pointer disabled:cursor-not-allowed"
+            title="Ekspor Lembar Buku Induk ke format PDF beresolusi tinggi (A4 Standard)"
+          >
+            {isExportingPdf ? (
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
+            ) : (
+              <FileDown className="w-4 h-4 text-emerald-200" />
+            )}
+            <span>{isExportingPdf ? 'MEMPROSES PDF...' : 'PRINT TO PDF'}</span>
+          </button>
+
+          <button
             onClick={handlePrint}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#003399] hover:bg-[#002266] text-white text-xs font-extrabold rounded-xl shadow-lg transition-transform transform active:scale-95"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#003399] hover:bg-[#002266] text-white text-xs font-extrabold rounded-xl shadow-lg transition-transform transform active:scale-95 cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             <span>CETAK LEMBAR BUKU INDUK (CTRL + P)</span>
@@ -92,11 +133,18 @@ export const PrintBukuIndukView: React.FC<PrintBukuIndukViewProps> = ({
         </div>
       </div>
 
+      {exportError && (
+        <div className="no-print p-3 rounded-xl bg-red-50 text-red-700 border border-red-200 text-xs font-semibold flex items-center justify-between">
+          <span>{exportError}</span>
+          <button onClick={() => setExportError(null)} className="font-bold underline ml-2">Tutup</button>
+        </div>
+      )}
+
       {/* DOCUMENT PREVIEW CONTAINER (Styled exact to Indonesian Government Standard Buku Induk Siswa) */}
       <div className="max-w-[210mm] mx-auto bg-white text-slate-950 p-[12mm] shadow-2xl rounded-sm print:max-w-none print:bg-white print:p-0 print:shadow-none print:m-0 print:w-full print:border-none print:rounded-none font-serif text-[12px] leading-relaxed">
         
         {/* ================= PAGE 1 ================= */}
-        <div className="print-page relative space-y-4">
+        <div ref={page1Ref} className="print-page relative space-y-4">
           {/* Header Kop Lembar Buku Induk (sama persis dengan KOP Raport Siswa) */}
           <KopSuratHeader
             schoolProfile={schoolProfile}
@@ -385,7 +433,7 @@ export const PrintBukuIndukView: React.FC<PrintBukuIndukViewProps> = ({
         <div className="page-break" />
 
         {/* ================= PAGE 2 ================= */}
-        <div className="print-page relative space-y-4 pt-6">
+        <div ref={page2Ref} className="print-page relative space-y-4 pt-6">
           {/* Header Lembar Buku Induk Halaman 2 */}
           <div className="flex flex-wrap justify-between items-center bg-slate-100 p-2 border border-slate-950 font-sans text-xs font-bold gap-2">
             <div>

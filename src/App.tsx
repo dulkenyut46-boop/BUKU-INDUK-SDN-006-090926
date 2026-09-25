@@ -28,6 +28,7 @@ import { STTBModal } from './components/modals/STTBModal';
 import { RaportInputModal } from './components/modals/RaportInputModal';
 import { ActivityLogModal } from './components/modals/ActivityLogModal';
 import { RestoreDatabaseModal } from './components/modals/RestoreDatabaseModal';
+import { GoogleDriveBackupModal } from './components/modals/GoogleDriveBackupModal';
 
 import { Student, MutationRecord, GraduationSTTB, SemesterReport } from './types';
 
@@ -119,6 +120,7 @@ const MainAppContent: React.FC = () => {
 
   const [isActivityLogModalOpen, setIsActivityLogModalOpen] = useState(false);
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+  const [isGoogleDriveModalOpen, setIsGoogleDriveModalOpen] = useState(false);
 
   // Auto-restore student form modal if browser was refreshed while filling
   const hasCheckedAutoRestoreRef = useRef(false);
@@ -299,6 +301,7 @@ const MainAppContent: React.FC = () => {
                 onOpenActivityLogs={() => setIsActivityLogModalOpen(true)}
                 onBack={() => setActiveTab('dashboard')}
                 onOpenRestoreDatabase={() => setIsRestoreModalOpen(true)}
+                onOpenGoogleDriveBackup={() => setIsGoogleDriveModalOpen(true)}
               />
             )}
 
@@ -372,6 +375,7 @@ const MainAppContent: React.FC = () => {
                 onBack={() => setActiveTab('dashboard')}
                 onOpenActivityLogs={() => setIsActivityLogModalOpen(true)}
                 onOpenRestoreDatabase={() => setIsRestoreModalOpen(true)}
+                onOpenGoogleDriveBackup={() => setIsGoogleDriveModalOpen(true)}
               />
             )}
           </div>
@@ -428,6 +432,12 @@ const MainAppContent: React.FC = () => {
       <RestoreDatabaseModal
         isOpen={isRestoreModalOpen}
         onClose={() => setIsRestoreModalOpen(false)}
+        onOpenGoogleDrive={() => setIsGoogleDriveModalOpen(true)}
+      />
+
+      <GoogleDriveBackupModal
+        isOpen={isGoogleDriveModalOpen}
+        onClose={() => setIsGoogleDriveModalOpen(false)}
       />
     </div>
   );

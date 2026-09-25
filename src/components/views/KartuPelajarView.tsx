@@ -1,35 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import QRCode from 'qrcode';
+import React, { useState } from 'react';
 import { 
   CreditCard, 
   Printer, 
   ArrowLeft, 
-  QrCode, 
-  ShieldCheck, 
-  CheckCircle2, 
   Palette, 
-  Image as ImageIcon, 
   Layers, 
-  Award, 
-  BookOpen, 
-  Download,
-  Upload,
-  Sparkles,
-  Camera,
-  Check,
-  ExternalLink,
-  Copy,
-  SearchCheck,
-  X,
-  Eye
+  Camera
 } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
 import { formatIndonesianDate, cn } from '../../lib/utils';
 import { Student } from '../../types';
 import { 
   TutWuriHandayaniSDLogo, 
-  TutWuriHandayaniKemdikbudLogo, 
-  KemenagMadrasahLogo,
   OfficialNationalLogo 
 } from '../../utils/logoHelper';
 import { EditLogoModal } from '../modals/EditLogoModal';
@@ -40,17 +22,6 @@ interface KartuPelajarViewProps {
   onSelectStudentDetail?: (studentId: string) => void;
   setActiveTab?: (tab: any) => void;
 }
-
-/**
- * Builds the public verification URL for a given student
- */
-export const getStudentVerificationUrl = (student: Student): string => {
-  if (typeof window === 'undefined') return '';
-  const origin = window.location.origin;
-  const pathname = window.location.pathname;
-  const verifyKey = student.nisn || student.noInduk || student.id;
-  return `${origin}${pathname}?tab=public-verify&verify=${encodeURIComponent(verifyKey)}&id=${encodeURIComponent(student.id)}#verify-${encodeURIComponent(verifyKey)}`;
-};
 
 type CardTheme = 'kemdikbud-blue' | 'merah-putih' | 'merdeka-green' | 'royal-navy';
 type CardSide = 'front' | 'back' | 'both';
@@ -132,9 +103,6 @@ export const KartuPelajarView: React.FC<KartuPelajarViewProps> = ({
   const [cardTheme, setCardTheme] = useState<CardTheme>('kemdikbud-blue');
   const [cardSide, setCardSide] = useState<CardSide>('front');
   const [isEditLogoModalOpen, setIsEditLogoModalOpen] = useState(false);
-  const [qrCodeMap, setQrCodeMap] = useState<Record<string, string>>({});
-  const [inspectingQrStudent, setInspectingQrStudent] = useState<Student | null>(null);
-  const [copiedLink, setCopiedLink] = useState(false);
 
   // Hidden photo upload ref for current active student
   const photoInputRef = React.useRef<HTMLInputElement>(null);
@@ -144,81 +112,6 @@ export const KartuPelajarView: React.FC<KartuPelajarViewProps> = ({
   const studentsToPrint = printMode === 'single'
     ? (student ? [student] : [])
     : students.filter(s => (selectedClass === 'ALL' || s.kelasSekarang === selectedClass) && s.status === 'Aktif');
-
-  // Generate real scannable QR Code for each student linking to their public verification profile
-  useEffect(() => {
-    let isMounted = true;
-    const generateAllQrs = async () => {
-      const newMap: Record<string, string> = {};
-      // Prioritize students currently visible / to be printed first
-      const primaryList = studentsToPrint;
-      const secondaryList = students.filter(s => !primaryList.some(p => p.id === s.id));
-      const allToProcess = [...primaryList, ...secondaryList];
-
-      for (const st of allToProcess) {
-        if (!isMounted) break;
-        if (qrCodeMap[st.id] || newMap[st.id]) continue;
-        try {
-          const verifyUrl = getStudentVerificationUrl(st);
-          const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
-            width: 320,
-            margin: 1,
-            color: {
-              dark: '#0f172a',
-              light: '#ffffff',
-            },
-            errorCorrectionLevel: 'M',
-          });
-          newMap[st.id] = qrDataUrl;
-          // Update immediately for visible students
-          if (primaryList.some(p => p.id === st.id) && isMounted) {
-            setQrCodeMap((prev) => ({ ...prev, [st.id]: qrDataUrl }));
-          }
-        } catch (err) {
-          console.error('Error generating QR code for student:', st.id, err);
-        }
-      }
-      if (isMounted && Object.keys(newMap).length > 0) {
-        setQrCodeMap((prev) => ({ ...prev, ...newMap }));
-      }
-    };
-
-    if (students.length > 0) {
-      generateAllQrs();
-    }
-    return () => {
-      isMounted = false;
-    };
-  }, [studentsToPrint, students]);
-
-  const handleOpenVerification = (st: Student) => {
-    if (typeof window !== 'undefined') {
-      const verifyKey = st.nisn || st.noInduk || st.id;
-      window.location.hash = `#verify-${encodeURIComponent(verifyKey)}`;
-      const newUrl = `${window.location.pathname}?tab=public-verify&verify=${encodeURIComponent(verifyKey)}&id=${encodeURIComponent(st.id)}#verify-${encodeURIComponent(verifyKey)}`;
-      window.history.pushState({}, '', newUrl);
-    }
-    if (setActiveTab) {
-      setActiveTab('public-verify');
-    } else {
-      setInspectingQrStudent(st);
-    }
-  };
-
-  const handleCopyLink = (url: string) => {
-    navigator.clipboard.writeText(url);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
-  };
-
-  const handleDownloadQrPng = (st: Student) => {
-    const dataUrl = qrCodeMap[st.id];
-    if (!dataUrl) return;
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = `QR_VERIFIKASI_${(st.nisn || st.namaLengkap).replace(/[^a-zA-Z0-9]/g, '_')}.png`;
-    a.click();
-  };
 
   const handlePrint = () => {
     window.print();
@@ -339,24 +232,13 @@ export const KartuPelajarView: React.FC<KartuPelajarViewProps> = ({
                 <span>Kartu Tanda Peserta Didik (ID Pelajar Resmi)</span>
               </h2>
               <p className="text-xs text-slate-500">
-                Format standar ID-1 (85.6 × 53.98 mm) dilengkapi Lambang Tut Wuri Handayani SD di kanan atas & barcode verifikasi
+                Format standar ID-1 (85.6 × 53.98 mm) dilengkapi Lambang Tut Wuri Handayani SD di kanan atas & barcode nomor induk
               </p>
             </div>
           </div>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
-            {student && (
-              <button
-                onClick={() => setInspectingQrStudent(student)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-                title="Lihat & Uji Coba QR Code Verifikasi Profil Publik Siswa"
-              >
-                <QrCode className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>QR Verifikasi Siswa</span>
-              </button>
-            )}
-
             <button
               onClick={() => setIsEditLogoModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 text-xs font-bold rounded-xl transition-colors cursor-pointer"
@@ -668,30 +550,22 @@ export const KartuPelajarView: React.FC<KartuPelajarViewProps> = ({
 
                 {/* Bottom Footer Bar */}
                 <div className={cn("px-2.5 py-1 flex items-center justify-between text-[6.5px] border-t relative z-10", currentTheme.footerBg)}>
-                  {/* Left: Real Generated QR Code for Public Verification */}
-                  <div className="flex items-center gap-1.5">
-                    <div 
-                      onClick={() => setInspectingQrStudent(s)}
-                      className="w-6 h-6 bg-white p-0.5 border border-slate-300 rounded shrink-0 flex items-center justify-center shadow-2xs hover:border-[#003399] hover:scale-105 transition-all cursor-pointer"
-                      title="Klik untuk melihat QR Code & tautan verifikasi profil publik siswa"
-                    >
-                      {qrCodeMap[s.id] ? (
-                        <img 
-                          src={qrCodeMap[s.id]} 
-                          alt={`QR Verifikasi ${s.namaLengkap}`} 
-                          className="w-full h-full object-contain" 
-                        />
-                      ) : (
-                        <QrCode className="w-full h-full text-slate-900 animate-pulse" />
-                      )}
+                  {/* Left: Barcode NISN */}
+                  <div className="flex flex-col items-start leading-tight">
+                    <div className="flex items-center gap-0.5 h-2.5 bg-slate-900 px-1 py-0.5 rounded-xs">
+                      <div className="w-0.5 h-full bg-white"></div>
+                      <div className="w-1 h-full bg-white"></div>
+                      <div className="w-0.5 h-full bg-white"></div>
+                      <div className="w-1.5 h-full bg-white"></div>
+                      <div className="w-0.5 h-full bg-white"></div>
+                      <div className="w-1 h-full bg-white"></div>
+                      <div className="w-0.5 h-full bg-white"></div>
+                      <div className="w-1.5 h-full bg-white"></div>
+                      <div className="w-0.5 h-full bg-white"></div>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="font-mono font-bold text-slate-900 leading-none">NISN:{s.nisn}</span>
-                      <span className="text-[5.5px] text-emerald-700 font-extrabold leading-tight flex items-center gap-0.5">
-                        <ShieldCheck className="w-2 h-2 text-emerald-600 inline shrink-0" />
-                        Verifikasi Publik
-                      </span>
-                    </div>
+                    <span className="font-mono text-[5.5px] font-bold text-slate-800 mt-0.5 tracking-wider">
+                      NISN: {s.nisn}
+                    </span>
                   </div>
 
                   {/* Right: Signature and Stempel */}
@@ -759,56 +633,30 @@ export const KartuPelajarView: React.FC<KartuPelajarViewProps> = ({
                   </div>
                 </div>
 
-                {/* School Address & Barcode & QR Verification info */}
+                {/* School Address & Barcode info */}
                 <div className="pt-1 border-t border-slate-200 flex items-center justify-between text-[6px] text-slate-600 gap-1.5">
-                  <div className="leading-tight max-w-[130px]">
+                  <div className="leading-tight max-w-[150px]">
                     <div className="font-bold text-slate-900 truncate">{schoolProfile.alamatJalan || schoolProfile.alamatSekolah}</div>
                     <div>Desa {schoolProfile.desaKelurahan || schoolProfile.desa}, Kec. {schoolProfile.kecamatan}</div>
                     <div>Telp: {schoolProfile.telepon} • Web: {schoolProfile.website}</div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* Simulated Code128 Barcode */}
-                    <div className="flex flex-col items-end">
-                      <div className="flex items-center gap-0.5 h-2.5 bg-slate-900 px-1 py-0.5 rounded-xs">
-                        <div className="w-0.5 h-full bg-white"></div>
-                        <div className="w-1 h-full bg-white"></div>
-                        <div className="w-0.5 h-full bg-white"></div>
-                        <div className="w-1.5 h-full bg-white"></div>
-                        <div className="w-0.5 h-full bg-white"></div>
-                        <div className="w-1 h-full bg-white"></div>
-                        <div className="w-0.5 h-full bg-white"></div>
-                        <div className="w-1.5 h-full bg-white"></div>
-                        <div className="w-0.5 h-full bg-white"></div>
-                      </div>
-                      <span className="font-mono text-[5px] font-bold text-slate-800 mt-0.5">
-                        *{s.noInduk}*
-                      </span>
+                  {/* Simulated Code128 Barcode */}
+                  <div className="flex flex-col items-end">
+                    <div className="flex items-center gap-0.5 h-3 bg-slate-900 px-1.5 py-0.5 rounded-xs">
+                      <div className="w-0.5 h-full bg-white"></div>
+                      <div className="w-1 h-full bg-white"></div>
+                      <div className="w-0.5 h-full bg-white"></div>
+                      <div className="w-1.5 h-full bg-white"></div>
+                      <div className="w-0.5 h-full bg-white"></div>
+                      <div className="w-1 h-full bg-white"></div>
+                      <div className="w-0.5 h-full bg-white"></div>
+                      <div className="w-1.5 h-full bg-white"></div>
+                      <div className="w-0.5 h-full bg-white"></div>
                     </div>
-
-                    {/* Generated QR Code for Public Verification */}
-                    <div 
-                      onClick={() => setInspectingQrStudent(s)}
-                      className="flex items-center gap-1 bg-slate-50 border border-slate-300 rounded p-0.5 cursor-pointer hover:border-[#003399] transition-colors"
-                      title="Pindai QR Code untuk Cek Keabsahan di Profil Verifikasi Publik"
-                    >
-                      <div className="w-7 h-7 bg-white rounded-xs p-0.5 overflow-hidden flex items-center justify-center shrink-0 shadow-2xs">
-                        {qrCodeMap[s.id] ? (
-                          <img 
-                            src={qrCodeMap[s.id]} 
-                            alt={`QR Verifikasi ${s.namaLengkap}`} 
-                            className="w-full h-full object-contain" 
-                          />
-                        ) : (
-                          <QrCode className="w-full h-full text-slate-900 animate-pulse" />
-                        )}
-                      </div>
-                      <div className="flex flex-col leading-none text-left pr-0.5">
-                        <span className="text-[5px] font-black text-slate-900 uppercase tracking-tighter">Scan QR</span>
-                        <span className="text-[4.5px] text-emerald-700 font-bold">Verifikasi</span>
-                        <span className="text-[4.5px] font-mono text-slate-500">{s.nisn}</span>
-                      </div>
-                    </div>
+                    <span className="font-mono text-[5.5px] font-bold text-slate-800 mt-0.5">
+                      *{s.noInduk}*
+                    </span>
                   </div>
                 </div>
 
@@ -818,124 +666,6 @@ export const KartuPelajarView: React.FC<KartuPelajarViewProps> = ({
           </React.Fragment>
         ))}
       </div>
-
-      {/* QR Code Verification Modal */}
-      {inspectingQrStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-[#003399] text-white">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-amber-300 border border-white/20">
-                  <QrCode className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-white">QR Code Verifikasi Kartu Pelajar</h3>
-                  <p className="text-[11px] text-blue-100">Tautan Resmi Profil Verifikasi Publik</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setInspectingQrStudent(null)}
-                className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-5 space-y-4 text-center">
-              {/* Student Identity */}
-              <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-left">
-                <div className="w-12 h-14 rounded-xl bg-blue-100 dark:bg-blue-900/60 text-[#003399] dark:text-blue-300 font-extrabold text-lg flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-800 overflow-hidden shadow-2xs">
-                  {inspectingQrStudent.fotoUrl ? (
-                    <img src={inspectingQrStudent.fotoUrl} alt={inspectingQrStudent.namaLengkap} className="w-full h-full object-cover" />
-                  ) : (
-                    inspectingQrStudent.namaLengkap.charAt(0)
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-extrabold text-xs text-slate-900 dark:text-slate-100 truncate">
-                    {inspectingQrStudent.namaLengkap}
-                  </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                    NISN: <strong className="text-slate-800 dark:text-slate-200">{inspectingQrStudent.nisn || '-'}</strong> • NIS: {inspectingQrStudent.noInduk || '-'}
-                  </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
-                    <span>Kelas {inspectingQrStudent.kelasSekarang}</span>
-                    <span>•</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">✓ Status {inspectingQrStudent.status}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Big High-Res QR Code Card */}
-              <div className="p-4 bg-white rounded-2xl border-2 border-slate-200 inline-block shadow-sm">
-                {qrCodeMap[inspectingQrStudent.id] ? (
-                  <img
-                    src={qrCodeMap[inspectingQrStudent.id]}
-                    alt={`QR Code ${inspectingQrStudent.namaLengkap}`}
-                    className="w-48 h-48 mx-auto object-contain"
-                  />
-                ) : (
-                  <div className="w-48 h-48 flex items-center justify-center text-slate-400">
-                    <QrCode className="w-16 h-16 animate-pulse" />
-                  </div>
-                )}
-                <div className="text-[10px] text-slate-500 font-medium mt-1.5 flex items-center justify-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Pindai menggunakan kamera ponsel / scanner untuk verifikasi keaslian</span>
-                </div>
-              </div>
-
-              {/* URL Box */}
-              <div className="space-y-1.5 text-left">
-                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  Tautan Verifikasi Profil Publik:
-                </label>
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="text"
-                    readOnly
-                    value={getStudentVerificationUrl(inspectingQrStudent)}
-                    className="flex-1 px-3 py-2 text-[11px] font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-hidden select-all"
-                  />
-                  <button
-                    onClick={() => handleCopyLink(getStudentVerificationUrl(inspectingQrStudent))}
-                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
-                    title="Salin Tautan"
-                  >
-                    {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedLink ? 'Tersalin' : 'Salin'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                <button
-                  onClick={() => handleDownloadQrPng(inspectingQrStudent)}
-                  className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5 text-[#003399] dark:text-blue-400" />
-                  <span>Unduh QR (.PNG)</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    const st = inspectingQrStudent;
-                    setInspectingQrStudent(null);
-                    handleOpenVerification(st);
-                  }}
-                  className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-[#003399] hover:bg-[#002266] text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Buka Profil Verifikasi</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Edit Logo Modal */}
       <EditLogoModal

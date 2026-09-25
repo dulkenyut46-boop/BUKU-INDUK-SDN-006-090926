@@ -287,6 +287,8 @@ interface SchoolContextType {
   
   exportDatabaseJSON: () => void;
   exportDatabaseDB: () => void;
+  getDatabaseBackupJsonString: () => string;
+  getDatabaseBackupDbString: () => string;
   exportStudentsCSV: () => void;
   importDatabaseJSON: (jsonData: string) => boolean;
   restoreDatabaseFromDB: (
@@ -1103,8 +1105,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     logActivity('EDIT', 'Memperbarui profil dan data identitas sekolah');
   };
 
-  // Export as JSON
-  const exportDatabaseJSON = () => {
+  // Get raw JSON string for backup (used for local download and Google Drive upload)
+  const getDatabaseBackupJsonString = (): string => {
     const dataToExport = {
       version: '1.0',
       exportedAt: new Date().toISOString(),
@@ -1115,7 +1117,13 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       adminUsers,
       securitySettings,
     };
-    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+    return JSON.stringify(dataToExport, null, 2);
+  };
+
+  // Export as JSON
+  const exportDatabaseJSON = () => {
+    const jsonString = getDatabaseBackupJsonString();
+    const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -1125,8 +1133,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     logActivity('EXPORT', 'Mengekspor seluruh database Buku Induk ke format JSON');
   };
 
-  // Export as manual .db file for offline backup (SQLite / SQL compatible)
-  const exportDatabaseDB = () => {
+  // Generate DB Dump string for offline backup (.db)
+  const getDatabaseBackupDbString = (): string => {
     const exportedAt = new Date().toISOString();
     const dataToExport = {
       version: '2.0-offline-db',
@@ -1213,7 +1221,13 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       `-- SNAPSHOT_JSON_START:${JSON.stringify(dataToExport)}:SNAPSHOT_JSON_END`,
     ];
 
-    const blob = new Blob([dumpLines.join('\n')], { type: 'application/x-sqlite3;charset=utf-8;' });
+    return dumpLines.join('\n');
+  };
+
+  // Export as manual .db file for offline backup (SQLite / SQL compatible)
+  const exportDatabaseDB = () => {
+    const dbContent = getDatabaseBackupDbString();
+    const blob = new Blob([dbContent], { type: 'application/x-sqlite3;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const cleanSchoolName = schoolProfile.namaSekolah.replace(/[^a-zA-Z0-9]/g, '_');
     const a = document.createElement('a');
@@ -1661,6 +1675,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         addActivityLog,
         exportDatabaseJSON,
         exportDatabaseDB,
+        getDatabaseBackupJsonString,
+        getDatabaseBackupDbString,
         exportStudentsCSV,
         importDatabaseJSON,
         restoreDatabaseFromDB,

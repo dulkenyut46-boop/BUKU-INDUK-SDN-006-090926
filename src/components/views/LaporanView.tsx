@@ -20,7 +20,8 @@ import {
   Share2,
   History,
   Database,
-  RotateCcw
+  RotateCcw,
+  Cloud
 } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
 import { ActiveTab } from '../layout/Sidebar';
@@ -32,6 +33,7 @@ interface LaporanViewProps {
   onOpenActivityLogs?: () => void;
   onBack?: () => void;
   onOpenRestoreDatabase?: () => void;
+  onOpenGoogleDriveBackup?: () => void;
 }
 
 export const LaporanView: React.FC<LaporanViewProps> = ({
@@ -39,6 +41,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
   onOpenActivityLogs,
   onBack,
   onOpenRestoreDatabase,
+  onOpenGoogleDriveBackup,
 }) => {
   const { 
     students, 
@@ -246,6 +249,22 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
       badgeColor: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300',
       actionLabel: 'Unduh File Cadangan',
       onAction: () => exportDatabaseJSON(),
+    },
+    {
+      id: 'export-google-drive',
+      title: 'Cadangan Cloud Google Drive',
+      subtitle: 'Simpan ke Google Drive Akun Sekolah',
+      description: 'Simpan salinan database Buku Induk langsung ke Google Drive dan pulihkan kapan saja dari awan.',
+      category: 'ekspor',
+      icon: Cloud,
+      iconBg: 'bg-indigo-50 dark:bg-indigo-950/60',
+      iconColor: 'text-indigo-600 dark:text-indigo-400',
+      badge: 'Google Drive',
+      badgeColor: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300',
+      actionLabel: 'Buka Menu Google Drive',
+      onAction: () => {
+        if (onOpenGoogleDriveBackup) onOpenGoogleDriveBackup();
+      },
     },
   ];
 
