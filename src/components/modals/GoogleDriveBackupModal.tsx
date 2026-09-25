@@ -14,7 +14,11 @@ import {
   LogOut, 
   RotateCcw,
   Check,
-  HardDrive
+  HardDrive,
+  Copy,
+  Key,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
 import { 
@@ -26,9 +30,11 @@ import {
   listGoogleDriveBackups, 
   downloadGoogleDriveBackupContent, 
   deleteGoogleDriveBackup,
-  DriveBackupFile 
+  setDriveAccessToken,
+  DriveBackupFile,
+  DriveUser
 } from '../../services/googleDriveService';
-import { User } from 'firebase/auth';
+import firebaseConfig from '../../../firebase-applet-config.json';
 import { cn } from '../../lib/utils';
 
 interface GoogleDriveBackupModalProps {
@@ -52,10 +58,15 @@ export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
   } = useSchool();
 
   const [activeTab, setActiveTab] = useState<'backup' | 'history'>('backup');
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<DriveUser | null>(null);
   const [hasToken, setHasToken] = useState<boolean>(false);
   const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isUnauthorizedDomain, setIsUnauthorizedDomain] = useState<boolean>(false);
+  const [copiedDomain, setCopiedDomain] = useState<boolean>(false);
+  const [showManualTokenInput, setShowManualTokenInput] = useState<boolean>(false);
+  const [manualTokenValue, setManualTokenValue] = useState<string>('');
+  const [isVerifyingManualToken, setIsVerifyingManualToken] = useState<boolean>(false);
 
   // Backup configuration
   const [backupFormat, setBackupFormat] = useState<'json' | 'db'>('json');
@@ -79,6 +90,7 @@ export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
       (user, token) => {
         setCurrentUser(user);
         setHasToken(!!token);
+        setIsUnauthorizedDomain(false);
       },
       () => {
         // Not signed in with token
@@ -110,6 +122,7 @@ export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
   const handleSignIn = async () => {
     setIsAuthenticating(true);
     setAuthError(null);
+    setIsUnauthorizedDomain(false);
     try {
       const { user, accessToken } = await signInWithGoogleDrive();
       setCurrentUser(user);
@@ -117,9 +130,50 @@ export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
       logActivity('SYSTEM', 'Berhasil menghubungkan akun Google Drive untuk pencadangan cloud');
     } catch (err: any) {
       console.error('Sign-in error:', err);
-      setAuthError(err?.message || 'Gagal masuk dengan akun Google. Harap coba lagi.');
+      const isDomainErr = 
+        err?.code === 'auth/unauthorized-domain' || 
+        err?.isUnauthorizedDomain || 
+        (typeof err?.message === 'string' && (
+          err.message.includes('auth/unauthorized-domain') || 
+          err.message.includes('unauthorized-domain') ||
+          err.message.includes('belum diizinkan dalam Firebase')
+        ));
+
+      if (isDomainErr) {
+        setIsUnauthorizedDomain(true);
+        setAuthError(
+          'Domain aplikasi saat ini belum didaftarkan di Firebase Authentication Authorized Domains.'
+        );
+      } else {
+        setAuthError(err?.message || 'Gagal masuk dengan akun Google. Harap coba lagi.');
+      }
     } finally {
       setIsAuthenticating(false);
+    }
+  };
+
+  const handleCopyCurrentDomain = () => {
+    const domain = typeof window !== 'undefined' ? window.location.hostname : '';
+    if (domain && navigator.clipboard) {
+      navigator.clipboard.writeText(domain);
+      setCopiedDomain(true);
+      setTimeout(() => setCopiedDomain(false), 2500);
+    }
+  };
+
+  const handleApplyManualToken = async () => {
+    if (!manualTokenValue.trim()) return;
+    setIsVerifyingManualToken(true);
+    setAuthError(null);
+    try {
+      await setDriveAccessToken(manualTokenValue.trim());
+      setHasToken(true);
+      setShowManualTokenInput(false);
+      logActivity('SYSTEM', 'Menghubungkan Google Drive menggunakan token akses manual');
+    } catch (err: any) {
+      setAuthError('Token akses tidak valid atau telah kedaluwarsa. Periksa kembali token Anda.');
+    } finally {
+      setIsVerifyingManualToken(false);
     }
   };
 
@@ -401,12 +455,80 @@ export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
                   Hubungkan akun Google Anda untuk menyimpan salinan cadangan langsung ke Google Drive pribadi atau sekolah dengan aman.
                 </p>
 
-                {authError && (
+                {/* Unauthorized Domain Warning & Troubleshooting Panel */}
+                {isUnauthorizedDomain ? (
+                  <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 rounded-xl space-y-3 text-xs text-amber-900 dark:text-amber-100 shadow-xs">
+                    <div className="flex items-start gap-2.5">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <div className="font-extrabold text-amber-900 dark:text-amber-200">
+                          Domain Belum Masuk Daftar Authorized Domains Firebase
+                        </div>
+                        <p className="text-[11.5px] text-amber-800 dark:text-amber-300/90 leading-relaxed">
+                          Keamanan Firebase Authentication memerlukan nama domain aplikasi untuk didaftarkan pada 
+                          <span className="font-semibold"> Firebase Console &gt; Authentication &gt; Settings &gt; Authorized domains</span>.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Current Domain Box */}
+                    <div className="p-2.5 bg-white dark:bg-slate-900 rounded-lg border border-amber-200 dark:border-amber-800 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                          Domain Aplikasi Saat Ini:
+                        </div>
+                        <div className="font-mono text-xs font-bold text-blue-700 dark:text-blue-300 truncate select-all">
+                          {typeof window !== 'undefined' ? window.location.hostname : 'aplikasi'}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyCurrentDomain}
+                        className="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/60 dark:hover:bg-amber-800 text-amber-900 dark:text-amber-200 rounded-lg font-bold text-[11px] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                      >
+                        {copiedDomain ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Tersalin!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Salin Domain</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <a
+                        href={`https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/settings`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-1.5 bg-[#003399] hover:bg-[#002266] text-white rounded-lg font-bold text-[11px] flex items-center gap-1.5 shadow-xs transition-colors"
+                      >
+                        <span>Buka Pengaturan Firebase Console</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={handleSignIn}
+                        disabled={isAuthenticating}
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px] flex items-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <RefreshCw className={cn("w-3 h-3", isAuthenticating && "animate-spin")} />
+                        <span>Coba Hubungkan Ulang (Google Direct)</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : authError ? (
                   <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
                     <span>{authError}</span>
                   </div>
-                )}
+                ) : null}
 
                 {/* Official Material Google Sign-In Button */}
                 <button
@@ -428,6 +550,44 @@ export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
                   )}
                   <span>{isAuthenticating ? 'Menghubungkan...' : 'Masuk dengan Akun Google (Google Drive)'}</span>
                 </button>
+
+                {/* Collapsible Manual Token Input for advanced environments */}
+                <div className="pt-1 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowManualTokenInput(!showManualTokenInput)}
+                    className="text-[11px] font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 inline-flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <Key className="w-3 h-3" />
+                    <span>Opsi Lanjutan: Sambungkan dengan Token Akses OAuth Google</span>
+                    {showManualTokenInput ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
+
+                  {showManualTokenInput && (
+                    <div className="mt-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-left space-y-2">
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                        Bila otorisasi popup terhalang oleh peramban atau domain belum diizinkan, Anda dapat menempelkan token akses Google OAuth sementara di sini:
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          type="password"
+                          value={manualTokenValue}
+                          onChange={(e) => setManualTokenValue(e.target.value)}
+                          placeholder="ya29.a0AcM..."
+                          className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleApplyManualToken}
+                          disabled={!manualTokenValue.trim() || isVerifyingManualToken}
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0"
+                        >
+                          {isVerifyingManualToken ? 'Memeriksa...' : 'Terapkan'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
