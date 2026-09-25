@@ -17,7 +17,7 @@ export interface ImportParseSummary {
 }
 
 /**
- * 67-Column Standard Template Headers matching Dapodik Kemdikbud Schema
+ * 69-Column Standard Template Headers matching Dapodik Kemdikbud Schema (including Kabupaten & Provinsi)
  */
 export const TEMPLATE_HEADER_ROW_1 = [
   'No',
@@ -37,6 +37,8 @@ export const TEMPLATE_HEADER_ROW_1 = [
   'Dusun',
   'Kelurahan',
   'Kecamatan',
+  'Kabupaten',
+  'Provinsi',
   'Kode Pos',
   'Jenis Tinggal',
   'Alat Transportasi',
@@ -80,17 +82,17 @@ export const TEMPLATE_HEADER_ROW_1 = [
 export const TEMPLATE_HEADER_ROW_2 = [
   '', '', '', '', '', '', '', '', '', '', // 0-9
   '', '', '', '', '', '', '', '', '', '', // 10-19
-  '', '', '', '', '', '',                 // 20-25
-  // Data Ayah sub-columns (26-31)
+  '', '', '', '', '', '', '', '',         // 20-27 (28 single columns before Ayah)
+  // Data Ayah sub-columns (28-33)
   'Nama', 'Tahun Lahir', 'Jenjang Pendidikan', 'Pekerjaan', 'Penghasilan', 'NIK',
-  // Data Ibu sub-columns (32-37)
+  // Data Ibu sub-columns (34-39)
   'Nama', 'Tahun Lahir', 'Jenjang Pendidikan', 'Pekerjaan', 'Penghasilan', 'NIK',
-  // Data Wali sub-columns (38-43)
+  // Data Wali sub-columns (40-45)
   'Nama', 'Tahun Lahir', 'Jenjang Pendidikan', 'Pekerjaan', 'Penghasilan', 'NIK',
-  // 44-66
+  // 46-68 (23 columns)
   '', '', '', '', '', '', '',
   '', '', '', '', '', '',
-  '', '', '', '', '', '', '', '', '',
+  '', '', '', '', '', '', '', '', '', '',
 ];
 
 // Sample demo rows
@@ -112,6 +114,8 @@ export const SAMPLE_TEMPLATE_ROW_1 = [
   'Dusun Krajan',
   'Cisalak Pasar',
   'Cimanggis',
+  'Kota Depok',
+  'Jawa Barat',
   '16452',
   'Bersama Orang Tua',
   'Sepeda Motor',
@@ -121,28 +125,28 @@ export const SAMPLE_TEMPLATE_ROW_1 = [
   '123456789',
   'Tidak',
   '',
-  // Data Ayah
+  // Data Ayah (28-33)
   'Budi Santoso',
   '1978',
   'S1',
   'Karyawan Swasta',
   'Rp 4.000.000 - Rp 6.000.000',
   '3201011504780002',
-  // Data Ibu
+  // Data Ibu (34-39)
   'Siti Rahmawati',
   '1980',
   'S1',
   'Guru / Wiraswasta',
   'Rp 2.000.000 - Rp 3.500.000',
   '3201014808800003',
-  // Data Wali
+  // Data Wali (40-45)
   '',
   '',
   '',
   '',
   '',
   '',
-  // Modul Ujian, KIP & Lainnya
+  // Modul Ujian, KIP & Lainnya (46-68)
   '01-001-023-4',
   'DN-01/D-SD/13/0012345',
   'Tidak',
@@ -186,6 +190,8 @@ export const SAMPLE_TEMPLATE_ROW_2 = [
   '',
   'Mekarsari',
   'Cimanggis',
+  'Kota Depok',
+  'Jawa Barat',
   '16452',
   'Bersama Orang Tua',
   'Angkutan Umum',
@@ -195,28 +201,28 @@ export const SAMPLE_TEMPLATE_ROW_2 = [
   '987654321',
   'Tidak',
   '',
-  // Data Ayah
+  // Data Ayah (28-33)
   'Drs. Hendra Kusuma',
   '1975',
   'S2',
   'PNS / ASN',
   'Rp 5.000.000 - Rp 8.000.000',
   '3201011203750005',
-  // Data Ibu
+  // Data Ibu (34-39)
   'Dewi Kartika, S.Pd.',
   '1977',
   'S1',
   'Ibu Rumah Tangga',
   'Tidak Ada',
   '3201015507770006',
-  // Data Wali
+  // Data Wali (40-45)
   '',
   '',
   '',
   '',
   '',
   '',
-  // Modul Ujian, KIP & Lainnya
+  // Modul Ujian, KIP & Lainnya (46-68)
   '01-001-024-2',
   'DN-01/D-SD/13/0012346',
   'Ya',
@@ -262,6 +268,8 @@ export const SAMPLE_TEMPLATE_ROWS = [
     Dusun: 'Dusun Krajan',
     Kelurahan: 'Cisalak Pasar',
     Kecamatan: 'Cimanggis',
+    Kabupaten: 'Kota Depok',
+    Provinsi: 'Jawa Barat',
     'Kode Pos': '16452',
     'Jenis Tinggal': 'Bersama Orang Tua',
     'Alat Transportasi': 'Sepeda Motor',
@@ -331,6 +339,8 @@ export const SAMPLE_TEMPLATE_ROWS = [
     Dusun: '',
     Kelurahan: 'Mekarsari',
     Kecamatan: 'Cimanggis',
+    Kabupaten: 'Kota Depok',
+    Provinsi: 'Jawa Barat',
     'Kode Pos': '16452',
     'Jenis Tinggal': 'Bersama Orang Tua',
     'Alat Transportasi': 'Angkutan Umum',
@@ -399,21 +409,22 @@ export const TEMPLATE_INSTRUCTIONS = [
   { NO: 11, KOLOM: 'Alamat', KETERANGAN: 'Nama jalan, perumahan, atau alamat domisili tempat tinggal siswa.', CONTOH: 'Jl. Merdeka No. 45' },
   { NO: 12, KOLOM: 'RT / RW', KETERANGAN: 'Nomor RT dan Nomor RW domisili siswa.', CONTOH: '03 / 02' },
   { NO: 13, KOLOM: 'Dusun / Kelurahan / Kecamatan', KETERANGAN: 'Wilayah administrasi domisili tempat tinggal siswa.', CONTOH: 'Cisalak Pasar, Cimanggis' },
-  { NO: 14, KOLOM: 'Kode Pos', KETERANGAN: '5 digit kode pos domisili.', CONTOH: '16452' },
-  { NO: 15, KOLOM: 'Jenis Tinggal', KETERANGAN: 'Contoh: Bersama Orang Tua, Wali, Kos, Asrama, Panti Asuhan.', CONTOH: 'Bersama Orang Tua' },
-  { NO: 16, KOLOM: 'Alat Transportasi', KETERANGAN: 'Transportasi ke sekolah: Jalan Kaki, Sepeda Motor, Angkutan Umum, Jemputan, dll.', CONTOH: 'Sepeda Motor' },
-  { NO: 17, KOLOM: 'Telepon / HP / E-Mail', KETERANGAN: 'Kontak komunikasi aktif peserta didik / orang tua.', CONTOH: '081234567890' },
-  { NO: 18, KOLOM: 'SKHUN', KETERANGAN: 'Surat Keterangan Hasil Ujian Nasional jenjang sebelumnya.', CONTOH: '123456789' },
-  { NO: 19, KOLOM: 'Penerima KPS / No. KPS', KETERANGAN: 'Status kartu perlindungan sosial: Ya / Tidak dan Nomor KPS jika ada.', CONTOH: 'Tidak' },
-  { NO: 20, KOLOM: 'Data Ayah (6 Kolom)', KETERANGAN: 'Meliputi: Nama, Tahun Lahir, Jenjang Pendidikan, Pekerjaan, Penghasilan, NIK Ayah.', CONTOH: 'Budi Santoso, 1978, S1, Karyawan Swasta' },
-  { NO: 21, KOLOM: 'Data Ibu (6 Kolom)', KETERANGAN: 'Meliputi: Nama, Tahun Lahir, Jenjang Pendidikan, Pekerjaan, Penghasilan, NIK Ibu.', CONTOH: 'Siti Rahmawati, 1980, S1, Ibu Rumah Tangga' },
-  { NO: 22, KOLOM: 'Data Wali (6 Kolom)', KETERANGAN: 'Diisi jika siswa tinggal bersama wali (Nama, Tahun Lahir, Pendidikan, Pekerjaan, Penghasilan, NIK).', CONTOH: 'Opsional' },
-  { NO: 23, KOLOM: 'No Peserta Ujian Nasional / No Seri Ijazah', KETERANGAN: 'Nomor peserta ujian & nomor seri ijazah jenjang sebelumnya.', CONTOH: 'DN-01/D-SD/13/0012345' },
-  { NO: 24, KOLOM: 'KIP / PIP / KKS', KETERANGAN: 'Data bantuan pendidikan Kemdikbud: Penerima KIP, Nomor KIP, Nama KIP, Nomor KKS, Layak PIP.', CONTOH: 'Ya / 123456' },
-  { NO: 25, KOLOM: 'Rekening Bank Siswa', KETERANGAN: 'Nama Bank (contoh: BRI, BNI), Nomor Rekening, dan Rekening Atas Nama siswa.', CONTOH: 'BRI / 012345678910' },
-  { NO: 26, KOLOM: 'Sekolah Asal', KETERANGAN: 'Nama sekolah asal (TK/PAUD/SD/MI) sebelum masuk ke sekolah ini.', CONTOH: 'SD Negeri 01 Cimanggis' },
-  { NO: 27, KOLOM: 'Fisik Siswa', KETERANGAN: 'Berat Badan (kg), Tinggi Badan (cm), Lingkar Kepala (cm).', CONTOH: 'BB: 43 kg, TB: 152 cm, LK: 54 cm' },
-  { NO: 28, KOLOM: 'Jarak ke Sekolah (KM)', KETERANGAN: 'Perkiraan jarak dari rumah ke sekolah dalam satuan kilometer.', CONTOH: '1.5' },
+  { NO: 14, KOLOM: 'Kabupaten & Provinsi', KETERANGAN: 'Nama Kabupaten/Kota dan Provinsi domisili siswa.', CONTOH: 'Kota Depok, Jawa Barat' },
+  { NO: 15, KOLOM: 'Kode Pos', KETERANGAN: '5 digit kode pos domisili.', CONTOH: '16452' },
+  { NO: 16, KOLOM: 'Jenis Tinggal', KETERANGAN: 'Contoh: Bersama Orang Tua, Wali, Kos, Asrama, Panti Asuhan.', CONTOH: 'Bersama Orang Tua' },
+  { NO: 17, KOLOM: 'Alat Transportasi', KETERANGAN: 'Transportasi ke sekolah: Jalan Kaki, Sepeda Motor, Angkutan Umum, Jemputan, dll.', CONTOH: 'Sepeda Motor' },
+  { NO: 18, KOLOM: 'Telepon / HP / E-Mail', KETERANGAN: 'Kontak komunikasi aktif peserta didik / orang tua.', CONTOH: '081234567890' },
+  { NO: 19, KOLOM: 'SKHUN', KETERANGAN: 'Surat Keterangan Hasil Ujian Nasional jenjang sebelumnya.', CONTOH: '123456789' },
+  { NO: 20, KOLOM: 'Penerima KPS / No. KPS', KETERANGAN: 'Status kartu perlindungan sosial: Ya / Tidak dan Nomor KPS jika ada.', CONTOH: 'Tidak' },
+  { NO: 21, KOLOM: 'Data Ayah (6 Kolom)', KETERANGAN: 'Meliputi: Nama, Tahun Lahir, Jenjang Pendidikan, Pekerjaan, Penghasilan, NIK Ayah.', CONTOH: 'Budi Santoso, 1978, S1, Karyawan Swasta' },
+  { NO: 22, KOLOM: 'Data Ibu (6 Kolom)', KETERANGAN: 'Meliputi: Nama, Tahun Lahir, Jenjang Pendidikan, Pekerjaan, Penghasilan, NIK Ibu.', CONTOH: 'Siti Rahmawati, 1980, S1, Ibu Rumah Tangga' },
+  { NO: 23, KOLOM: 'Data Wali (6 Kolom)', KETERANGAN: 'Diisi jika siswa tinggal bersama wali (Nama, Tahun Lahir, Pendidikan, Pekerjaan, Penghasilan, NIK).', CONTOH: 'Opsional' },
+  { NO: 24, KOLOM: 'No Peserta Ujian Nasional / No Seri Ijazah', KETERANGAN: 'Nomor peserta ujian & nomor seri ijazah jenjang sebelumnya.', CONTOH: 'DN-01/D-SD/13/0012345' },
+  { NO: 25, KOLOM: 'KIP / PIP / KKS', KETERANGAN: 'Data bantuan pendidikan Kemdikbud: Penerima KIP, Nomor KIP, Nama KIP, Nomor KKS, Layak PIP.', CONTOH: 'Ya / 123456' },
+  { NO: 26, KOLOM: 'Rekening Bank Siswa', KETERANGAN: 'Nama Bank (contoh: BRI, BNI), Nomor Rekening, dan Rekening Atas Nama siswa.', CONTOH: 'BRI / 012345678910' },
+  { NO: 27, KOLOM: 'Sekolah Asal', KETERANGAN: 'Nama sekolah asal (TK/PAUD/SD/MI) sebelum masuk ke sekolah ini.', CONTOH: 'SD Negeri 01 Cimanggis' },
+  { NO: 28, KOLOM: 'Fisik Siswa', KETERANGAN: 'Berat Badan (kg), Tinggi Badan (cm), Lingkar Kepala (cm).', CONTOH: 'BB: 43 kg, TB: 152 cm, LK: 54 cm' },
+  { NO: 29, KOLOM: 'Jarak ke Sekolah (KM)', KETERANGAN: 'Perkiraan jarak dari rumah ke sekolah dalam satuan kilometer.', CONTOH: '1.5' },
 ];
 
 /**
@@ -433,21 +444,21 @@ export const downloadExcelTemplate = (schoolName: string = 'Sekolah') => {
   const wsData = XLSX.utils.aoa_to_sheet(aoaData);
 
   // Set Merges:
-  // - Columns 0-25: vertically merge row 0 and row 1
-  // - Columns 26-31: horizontally merge row 0 for 'Data Ayah'
-  // - Columns 32-37: horizontally merge row 0 for 'Data Ibu'
-  // - Columns 38-43: horizontally merge row 0 for 'Data Wali'
-  // - Columns 44-66: vertically merge row 0 and row 1
+  // - Columns 0-27: vertically merge row 0 and row 1 (28 columns)
+  // - Columns 28-33: horizontally merge row 0 for 'Data Ayah' (6 columns)
+  // - Columns 34-39: horizontally merge row 0 for 'Data Ibu' (6 columns)
+  // - Columns 40-45: horizontally merge row 0 for 'Data Wali' (6 columns)
+  // - Columns 46-68: vertically merge row 0 and row 1 (23 columns)
   const merges: XLSX.Range[] = [
-    ...Array.from({ length: 26 }, (_, i) => ({ s: { r: 0, c: i }, e: { r: 1, c: i } })),
-    { s: { r: 0, c: 26 }, e: { r: 0, c: 31 } }, // Data Ayah
-    { s: { r: 0, c: 32 }, e: { r: 0, c: 37 } }, // Data Ibu
-    { s: { r: 0, c: 38 }, e: { r: 0, c: 43 } }, // Data Wali
-    ...Array.from({ length: 23 }, (_, i) => ({ s: { r: 0, c: 44 + i }, e: { r: 1, c: 44 + i } })),
+    ...Array.from({ length: 28 }, (_, i) => ({ s: { r: 0, c: i }, e: { r: 1, c: i } })),
+    { s: { r: 0, c: 28 }, e: { r: 0, c: 33 } }, // Data Ayah
+    { s: { r: 0, c: 34 }, e: { r: 0, c: 39 } }, // Data Ibu
+    { s: { r: 0, c: 40 }, e: { r: 0, c: 45 } }, // Data Wali
+    ...Array.from({ length: 23 }, (_, i) => ({ s: { r: 0, c: 46 + i }, e: { r: 1, c: 46 + i } })),
   ];
   wsData['!merges'] = merges;
 
-  // Set column widths matching 67 columns
+  // Set column widths matching 69 columns
   const colWidths = [
     { wch: 6 },  // 1: No
     { wch: 28 }, // 2: Nama
@@ -466,60 +477,62 @@ export const downloadExcelTemplate = (schoolName: string = 'Sekolah') => {
     { wch: 16 }, // 15: Dusun
     { wch: 18 }, // 16: Kelurahan
     { wch: 18 }, // 17: Kecamatan
-    { wch: 10 }, // 18: Kode Pos
-    { wch: 18 }, // 19: Jenis Tinggal
-    { wch: 18 }, // 20: Alat Transportasi
-    { wch: 14 }, // 21: Telepon
-    { wch: 16 }, // 22: HP
-    { wch: 24 }, // 23: E-Mail
-    { wch: 14 }, // 24: SKHUN
-    { wch: 14 }, // 25: Penerima KPS
-    { wch: 14 }, // 26: No. KPS
+    { wch: 18 }, // 18: Kabupaten
+    { wch: 18 }, // 19: Provinsi
+    { wch: 10 }, // 20: Kode Pos
+    { wch: 18 }, // 21: Jenis Tinggal
+    { wch: 18 }, // 22: Alat Transportasi
+    { wch: 14 }, // 23: Telepon
+    { wch: 16 }, // 24: HP
+    { wch: 24 }, // 25: E-Mail
+    { wch: 14 }, // 26: SKHUN
+    { wch: 14 }, // 27: Penerima KPS
+    { wch: 14 }, // 28: No. KPS
     // Data Ayah
-    { wch: 22 }, // 27: Nama
-    { wch: 12 }, // 28: Tahun Lahir
-    { wch: 18 }, // 29: Jenjang Pendidikan
-    { wch: 18 }, // 30: Pekerjaan
-    { wch: 22 }, // 31: Penghasilan
-    { wch: 18 }, // 32: NIK
+    { wch: 22 }, // 29: Nama
+    { wch: 12 }, // 30: Tahun Lahir
+    { wch: 18 }, // 31: Jenjang Pendidikan
+    { wch: 18 }, // 32: Pekerjaan
+    { wch: 22 }, // 33: Penghasilan
+    { wch: 18 }, // 34: NIK
     // Data Ibu
-    { wch: 22 }, // 33: Nama
-    { wch: 12 }, // 34: Tahun Lahir
-    { wch: 18 }, // 35: Jenjang Pendidikan
-    { wch: 18 }, // 36: Pekerjaan
-    { wch: 22 }, // 37: Penghasilan
-    { wch: 18 }, // 38: NIK
+    { wch: 22 }, // 35: Nama
+    { wch: 12 }, // 36: Tahun Lahir
+    { wch: 18 }, // 37: Jenjang Pendidikan
+    { wch: 18 }, // 38: Pekerjaan
+    { wch: 22 }, // 39: Penghasilan
+    { wch: 18 }, // 40: NIK
     // Data Wali
-    { wch: 22 }, // 39: Nama
-    { wch: 12 }, // 40: Tahun Lahir
-    { wch: 18 }, // 41: Jenjang Pendidikan
-    { wch: 18 }, // 42: Pekerjaan
-    { wch: 22 }, // 43: Penghasilan
-    { wch: 18 }, // 44: NIK
+    { wch: 22 }, // 41: Nama
+    { wch: 12 }, // 42: Tahun Lahir
+    { wch: 18 }, // 43: Jenjang Pendidikan
+    { wch: 18 }, // 44: Pekerjaan
+    { wch: 22 }, // 45: Penghasilan
+    { wch: 18 }, // 46: NIK
     // Modul Ujian, KIP & Lainnya
-    { wch: 24 }, // 45: No Peserta Ujian Nasional
-    { wch: 24 }, // 46: No Seri Ijazah
-    { wch: 14 }, // 47: Penerima KIP
-    { wch: 16 }, // 48: Nomor KIP
-    { wch: 24 }, // 49: Nama di KIP
-    { wch: 16 }, // 50: Nomor KKS
-    { wch: 24 }, // 51: No Registrasi Akta Lahir
-    { wch: 12 }, // 52: Bank
-    { wch: 20 }, // 53: Nomor Rekening Bank
-    { wch: 24 }, // 54: Rekening Atas Nama
-    { wch: 26 }, // 55: Layak PIP (usulan dari sekolah)
-    { wch: 22 }, // 56: Alasan Layak PIP
-    { wch: 18 }, // 57: Kebutuhan Khusus
-    { wch: 24 }, // 58: Sekolah Asal
-    { wch: 14 }, // 59: Anak ke-berapa
-    { wch: 14 }, // 60: Lintang
-    { wch: 14 }, // 61: Bujur
-    { wch: 18 }, // 62: No KK
-    { wch: 12 }, // 63: Berat Badan
-    { wch: 12 }, // 64: Tinggi Badan
-    { wch: 14 }, // 65: Lingkar Kepala
-    { wch: 20 }, // 66: Jml. Saudara Kandung
-    { wch: 24 }, // 67: Jarak Rumah ke Sekolah (KM)
+    { wch: 24 }, // 47: No Peserta Ujian Nasional
+    { wch: 24 }, // 48: No Seri Ijazah
+    { wch: 14 }, // 49: Penerima KIP
+    { wch: 16 }, // 50: Nomor KIP
+    { wch: 24 }, // 51: Nama di KIP
+    { wch: 16 }, // 52: Nomor KKS
+    { wch: 24 }, // 53: No Registrasi Akta Lahir
+    { wch: 12 }, // 54: Bank
+    { wch: 20 }, // 55: Nomor Rekening Bank
+    { wch: 24 }, // 56: Rekening Atas Nama
+    { wch: 26 }, // 57: Layak PIP (usulan dari sekolah)
+    { wch: 22 }, // 58: Alasan Layak PIP
+    { wch: 18 }, // 59: Kebutuhan Khusus
+    { wch: 24 }, // 60: Sekolah Asal
+    { wch: 14 }, // 61: Anak ke-berapa
+    { wch: 14 }, // 62: Lintang
+    { wch: 14 }, // 63: Bujur
+    { wch: 18 }, // 64: No KK
+    { wch: 12 }, // 65: Berat Badan
+    { wch: 12 }, // 66: Tinggi Badan
+    { wch: 14 }, // 67: Lingkar Kepala
+    { wch: 20 }, // 68: Jml. Saudara Kandung
+    { wch: 24 }, // 69: Jarak Rumah ke Sekolah (KM)
   ];
   wsData['!cols'] = colWidths;
 
@@ -756,83 +769,168 @@ export async function parseExcelOrCsvFile(file: File): Promise<ImportParseSummar
             rowDict[`COL_${c}`] = rowArray[c];
           });
 
-          // Also populate exact column index positions if rowArray matches the 67-col template
+          // Also populate exact column index positions
           if (rowArray.length >= 20) {
-            // Positional mapping
-            if (!rowDict['Nama'] && rowArray[1]) rowDict['Nama'] = rowArray[1];
-            if (!rowDict['NIPD'] && rowArray[2]) rowDict['NIPD'] = rowArray[2];
-            if (!rowDict['JK'] && rowArray[3]) rowDict['JK'] = rowArray[3];
-            if (!rowDict['NISN'] && rowArray[4]) rowDict['NISN'] = rowArray[4];
-            if (!rowDict['Tempat Lahir'] && rowArray[5]) rowDict['Tempat Lahir'] = rowArray[5];
-            if (!rowDict['Tanggal Lahir'] && rowArray[6]) rowDict['Tanggal Lahir'] = rowArray[6];
-            if (!rowDict['Rombel Saat Ini'] && rowArray[7]) rowDict['Rombel Saat Ini'] = rowArray[7];
-            if (!rowDict['NIK'] && rowArray[8]) rowDict['NIK'] = rowArray[8];
-            if (!rowDict['usia'] && rowArray[9]) rowDict['usia'] = rowArray[9];
-            if (!rowDict['Agama'] && rowArray[10]) rowDict['Agama'] = rowArray[10];
-            if (!rowDict['Alamat'] && rowArray[11]) rowDict['Alamat'] = rowArray[11];
-            if (!rowDict['RT'] && rowArray[12]) rowDict['RT'] = rowArray[12];
-            if (!rowDict['RW'] && rowArray[13]) rowDict['RW'] = rowArray[13];
-            if (!rowDict['Dusun'] && rowArray[14]) rowDict['Dusun'] = rowArray[14];
-            if (!rowDict['Kelurahan'] && rowArray[15]) rowDict['Kelurahan'] = rowArray[15];
-            if (!rowDict['Kecamatan'] && rowArray[16]) rowDict['Kecamatan'] = rowArray[16];
-            if (!rowDict['Kode Pos'] && rowArray[17]) rowDict['Kode Pos'] = rowArray[17];
-            if (!rowDict['Jenis Tinggal'] && rowArray[18]) rowDict['Jenis Tinggal'] = rowArray[18];
-            if (!rowDict['Alat Transportasi'] && rowArray[19]) rowDict['Alat Transportasi'] = rowArray[19];
-            if (!rowDict['Telepon'] && rowArray[20]) rowDict['Telepon'] = rowArray[20];
-            if (!rowDict['HP'] && rowArray[21]) rowDict['HP'] = rowArray[21];
-            if (!rowDict['E-Mail'] && rowArray[22]) rowDict['E-Mail'] = rowArray[22];
-            if (!rowDict['SKHUN'] && rowArray[23]) rowDict['SKHUN'] = rowArray[23];
-            if (!rowDict['Penerima KPS'] && rowArray[24]) rowDict['Penerima KPS'] = rowArray[24];
-            if (!rowDict['No. KPS'] && rowArray[25]) rowDict['No. KPS'] = rowArray[25];
+            // Determine if row follows the 69-column template (with Kabupaten & Provinsi)
+            // or the legacy 67-column template
+            const hasKabupatenHeader = columnHeaders.some(h => /kabupaten|kota/i.test(h));
+            const isTemplateWithKabProv = hasKabupatenHeader || rowArray.length >= 68;
 
-            // Ayah
-            if (rowArray[26]) rowDict['Data Ayah - Nama'] = rowArray[26];
-            if (rowArray[27]) rowDict['Data Ayah - Tahun Lahir'] = rowArray[27];
-            if (rowArray[28]) rowDict['Data Ayah - Jenjang Pendidikan'] = rowArray[28];
-            if (rowArray[29]) rowDict['Data Ayah - Pekerjaan'] = rowArray[29];
-            if (rowArray[30]) rowDict['Data Ayah - Penghasilan'] = rowArray[30];
-            if (rowArray[31]) rowDict['Data Ayah - NIK'] = rowArray[31];
+            if (isTemplateWithKabProv) {
+              // 69-Column Schema (Kabupaten at 17, Provinsi at 18)
+              if (!rowDict['Nama'] && rowArray[1]) rowDict['Nama'] = rowArray[1];
+              if (!rowDict['NIPD'] && rowArray[2]) rowDict['NIPD'] = rowArray[2];
+              if (!rowDict['JK'] && rowArray[3]) rowDict['JK'] = rowArray[3];
+              if (!rowDict['NISN'] && rowArray[4]) rowDict['NISN'] = rowArray[4];
+              if (!rowDict['Tempat Lahir'] && rowArray[5]) rowDict['Tempat Lahir'] = rowArray[5];
+              if (!rowDict['Tanggal Lahir'] && rowArray[6]) rowDict['Tanggal Lahir'] = rowArray[6];
+              if (!rowDict['Rombel Saat Ini'] && rowArray[7]) rowDict['Rombel Saat Ini'] = rowArray[7];
+              if (!rowDict['NIK'] && rowArray[8]) rowDict['NIK'] = rowArray[8];
+              if (!rowDict['usia'] && rowArray[9]) rowDict['usia'] = rowArray[9];
+              if (!rowDict['Agama'] && rowArray[10]) rowDict['Agama'] = rowArray[10];
+              if (!rowDict['Alamat'] && rowArray[11]) rowDict['Alamat'] = rowArray[11];
+              if (!rowDict['RT'] && rowArray[12]) rowDict['RT'] = rowArray[12];
+              if (!rowDict['RW'] && rowArray[13]) rowDict['RW'] = rowArray[13];
+              if (!rowDict['Dusun'] && rowArray[14]) rowDict['Dusun'] = rowArray[14];
+              if (!rowDict['Kelurahan'] && rowArray[15]) rowDict['Kelurahan'] = rowArray[15];
+              if (!rowDict['Kecamatan'] && rowArray[16]) rowDict['Kecamatan'] = rowArray[16];
+              if (!rowDict['Kabupaten'] && rowArray[17]) rowDict['Kabupaten'] = rowArray[17];
+              if (!rowDict['Provinsi'] && rowArray[18]) rowDict['Provinsi'] = rowArray[18];
+              if (!rowDict['Kode Pos'] && rowArray[19]) rowDict['Kode Pos'] = rowArray[19];
+              if (!rowDict['Jenis Tinggal'] && rowArray[20]) rowDict['Jenis Tinggal'] = rowArray[20];
+              if (!rowDict['Alat Transportasi'] && rowArray[21]) rowDict['Alat Transportasi'] = rowArray[21];
+              if (!rowDict['Telepon'] && rowArray[22]) rowDict['Telepon'] = rowArray[22];
+              if (!rowDict['HP'] && rowArray[23]) rowDict['HP'] = rowArray[23];
+              if (!rowDict['E-Mail'] && rowArray[24]) rowDict['E-Mail'] = rowArray[24];
+              if (!rowDict['SKHUN'] && rowArray[25]) rowDict['SKHUN'] = rowArray[25];
+              if (!rowDict['Penerima KPS'] && rowArray[26]) rowDict['Penerima KPS'] = rowArray[26];
+              if (!rowDict['No. KPS'] && rowArray[27]) rowDict['No. KPS'] = rowArray[27];
 
-            // Ibu
-            if (rowArray[32]) rowDict['Data Ibu - Nama'] = rowArray[32];
-            if (rowArray[33]) rowDict['Data Ibu - Tahun Lahir'] = rowArray[33];
-            if (rowArray[34]) rowDict['Data Ibu - Jenjang Pendidikan'] = rowArray[34];
-            if (rowArray[35]) rowDict['Data Ibu - Pekerjaan'] = rowArray[35];
-            if (rowArray[36]) rowDict['Data Ibu - Penghasilan'] = rowArray[36];
-            if (rowArray[37]) rowDict['Data Ibu - NIK'] = rowArray[37];
+              // Ayah (28-33)
+              if (rowArray[28]) rowDict['Data Ayah - Nama'] = rowArray[28];
+              if (rowArray[29]) rowDict['Data Ayah - Tahun Lahir'] = rowArray[29];
+              if (rowArray[30]) rowDict['Data Ayah - Jenjang Pendidikan'] = rowArray[30];
+              if (rowArray[31]) rowDict['Data Ayah - Pekerjaan'] = rowArray[31];
+              if (rowArray[32]) rowDict['Data Ayah - Penghasilan'] = rowArray[32];
+              if (rowArray[33]) rowDict['Data Ayah - NIK'] = rowArray[33];
 
-            // Wali
-            if (rowArray[38]) rowDict['Data Wali - Nama'] = rowArray[38];
-            if (rowArray[39]) rowDict['Data Wali - Tahun Lahir'] = rowArray[39];
-            if (rowArray[40]) rowDict['Data Wali - Jenjang Pendidikan'] = rowArray[40];
-            if (rowArray[41]) rowDict['Data Wali - Pekerjaan'] = rowArray[41];
-            if (rowArray[42]) rowDict['Data Wali - Penghasilan'] = rowArray[42];
-            if (rowArray[43]) rowDict['Data Wali - NIK'] = rowArray[43];
+              // Ibu (34-39)
+              if (rowArray[34]) rowDict['Data Ibu - Nama'] = rowArray[34];
+              if (rowArray[35]) rowDict['Data Ibu - Tahun Lahir'] = rowArray[35];
+              if (rowArray[36]) rowDict['Data Ibu - Jenjang Pendidikan'] = rowArray[36];
+              if (rowArray[37]) rowDict['Data Ibu - Pekerjaan'] = rowArray[37];
+              if (rowArray[38]) rowDict['Data Ibu - Penghasilan'] = rowArray[38];
+              if (rowArray[39]) rowDict['Data Ibu - NIK'] = rowArray[39];
 
-            // Modul Lanjutan
-            if (rowArray[44]) rowDict['No Peserta Ujian Nasional'] = rowArray[44];
-            if (rowArray[45]) rowDict['No Seri Ijazah'] = rowArray[45];
-            if (rowArray[46]) rowDict['Penerima KIP'] = rowArray[46];
-            if (rowArray[47]) rowDict['Nomor KIP'] = rowArray[47];
-            if (rowArray[48]) rowDict['Nama di KIP'] = rowArray[48];
-            if (rowArray[49]) rowDict['Nomor KKS'] = rowArray[49];
-            if (rowArray[50]) rowDict['No Registrasi Akta Lahir'] = rowArray[50];
-            if (rowArray[51]) rowDict['Bank'] = rowArray[51];
-            if (rowArray[52]) rowDict['Nomor Rekening Bank'] = rowArray[52];
-            if (rowArray[53]) rowDict['Rekening Atas Nama'] = rowArray[53];
-            if (rowArray[54]) rowDict['Layak PIP (usulan dari sekolah)'] = rowArray[54];
-            if (rowArray[55]) rowDict['Alasan Layak PIP'] = rowArray[55];
-            if (rowArray[56]) rowDict['Kebutuhan Khusus'] = rowArray[56];
-            if (rowArray[57]) rowDict['Sekolah Asal'] = rowArray[57];
-            if (rowArray[58]) rowDict['Anak ke-berapa'] = rowArray[58];
-            if (rowArray[59]) rowDict['Lintang'] = rowArray[59];
-            if (rowArray[60]) rowDict['Bujur'] = rowArray[60];
-            if (rowArray[61]) rowDict['No KK'] = rowArray[61];
-            if (rowArray[62]) rowDict['Berat Badan'] = rowArray[62];
-            if (rowArray[63]) rowDict['Tinggi Badan'] = rowArray[63];
-            if (rowArray[64]) rowDict['Lingkar Kepala'] = rowArray[64];
-            if (rowArray[65]) rowDict['Jml. Saudara Kandung'] = rowArray[65];
-            if (rowArray[66]) rowDict['Jarak Rumah ke Sekolah (KM)'] = rowArray[66];
+              // Wali (40-45)
+              if (rowArray[40]) rowDict['Data Wali - Nama'] = rowArray[40];
+              if (rowArray[41]) rowDict['Data Wali - Tahun Lahir'] = rowArray[41];
+              if (rowArray[42]) rowDict['Data Wali - Jenjang Pendidikan'] = rowArray[42];
+              if (rowArray[43]) rowDict['Data Wali - Pekerjaan'] = rowArray[43];
+              if (rowArray[44]) rowDict['Data Wali - Penghasilan'] = rowArray[44];
+              if (rowArray[45]) rowDict['Data Wali - NIK'] = rowArray[45];
+
+              // Modul Lanjutan (46-68)
+              if (rowArray[46]) rowDict['No Peserta Ujian Nasional'] = rowArray[46];
+              if (rowArray[47]) rowDict['No Seri Ijazah'] = rowArray[47];
+              if (rowArray[48]) rowDict['Penerima KIP'] = rowArray[48];
+              if (rowArray[49]) rowDict['Nomor KIP'] = rowArray[49];
+              if (rowArray[50]) rowDict['Nama di KIP'] = rowArray[50];
+              if (rowArray[51]) rowDict['Nomor KKS'] = rowArray[51];
+              if (rowArray[52]) rowDict['No Registrasi Akta Lahir'] = rowArray[52];
+              if (rowArray[53]) rowDict['Bank'] = rowArray[53];
+              if (rowArray[54]) rowDict['Nomor Rekening Bank'] = rowArray[54];
+              if (rowArray[55]) rowDict['Rekening Atas Nama'] = rowArray[55];
+              if (rowArray[56]) rowDict['Layak PIP (usulan dari sekolah)'] = rowArray[56];
+              if (rowArray[57]) rowDict['Alasan Layak PIP'] = rowArray[57];
+              if (rowArray[58]) rowDict['Kebutuhan Khusus'] = rowArray[58];
+              if (rowArray[59]) rowDict['Sekolah Asal'] = rowArray[59];
+              if (rowArray[60]) rowDict['Anak ke-berapa'] = rowArray[60];
+              if (rowArray[61]) rowDict['Lintang'] = rowArray[61];
+              if (rowArray[62]) rowDict['Bujur'] = rowArray[62];
+              if (rowArray[63]) rowDict['No KK'] = rowArray[63];
+              if (rowArray[64]) rowDict['Berat Badan'] = rowArray[64];
+              if (rowArray[65]) rowDict['Tinggi Badan'] = rowArray[65];
+              if (rowArray[66]) rowDict['Lingkar Kepala'] = rowArray[66];
+              if (rowArray[67]) rowDict['Jml. Saudara Kandung'] = rowArray[67];
+              if (rowArray[68]) rowDict['Jarak Rumah ke Sekolah (KM)'] = rowArray[68];
+            } else {
+              // Backward-compatible Legacy 67-Column Schema (No Kabupaten/Provinsi columns)
+              if (!rowDict['Nama'] && rowArray[1]) rowDict['Nama'] = rowArray[1];
+              if (!rowDict['NIPD'] && rowArray[2]) rowDict['NIPD'] = rowArray[2];
+              if (!rowDict['JK'] && rowArray[3]) rowDict['JK'] = rowArray[3];
+              if (!rowDict['NISN'] && rowArray[4]) rowDict['NISN'] = rowArray[4];
+              if (!rowDict['Tempat Lahir'] && rowArray[5]) rowDict['Tempat Lahir'] = rowArray[5];
+              if (!rowDict['Tanggal Lahir'] && rowArray[6]) rowDict['Tanggal Lahir'] = rowArray[6];
+              if (!rowDict['Rombel Saat Ini'] && rowArray[7]) rowDict['Rombel Saat Ini'] = rowArray[7];
+              if (!rowDict['NIK'] && rowArray[8]) rowDict['NIK'] = rowArray[8];
+              if (!rowDict['usia'] && rowArray[9]) rowDict['usia'] = rowArray[9];
+              if (!rowDict['Agama'] && rowArray[10]) rowDict['Agama'] = rowArray[10];
+              if (!rowDict['Alamat'] && rowArray[11]) rowDict['Alamat'] = rowArray[11];
+              if (!rowDict['RT'] && rowArray[12]) rowDict['RT'] = rowArray[12];
+              if (!rowDict['RW'] && rowArray[13]) rowDict['RW'] = rowArray[13];
+              if (!rowDict['Dusun'] && rowArray[14]) rowDict['Dusun'] = rowArray[14];
+              if (!rowDict['Kelurahan'] && rowArray[15]) rowDict['Kelurahan'] = rowArray[15];
+              if (!rowDict['Kecamatan'] && rowArray[16]) rowDict['Kecamatan'] = rowArray[16];
+              if (!rowDict['Kode Pos'] && rowArray[17]) rowDict['Kode Pos'] = rowArray[17];
+              if (!rowDict['Jenis Tinggal'] && rowArray[18]) rowDict['Jenis Tinggal'] = rowArray[18];
+              if (!rowDict['Alat Transportasi'] && rowArray[19]) rowDict['Alat Transportasi'] = rowArray[19];
+              if (!rowDict['Telepon'] && rowArray[20]) rowDict['Telepon'] = rowArray[20];
+              if (!rowDict['HP'] && rowArray[21]) rowDict['HP'] = rowArray[21];
+              if (!rowDict['E-Mail'] && rowArray[22]) rowDict['E-Mail'] = rowArray[22];
+              if (!rowDict['SKHUN'] && rowArray[23]) rowDict['SKHUN'] = rowArray[23];
+              if (!rowDict['Penerima KPS'] && rowArray[24]) rowDict['Penerima KPS'] = rowArray[24];
+              if (!rowDict['No. KPS'] && rowArray[25]) rowDict['No. KPS'] = rowArray[25];
+
+              // Ayah
+              if (rowArray[26]) rowDict['Data Ayah - Nama'] = rowArray[26];
+              if (rowArray[27]) rowDict['Data Ayah - Tahun Lahir'] = rowArray[27];
+              if (rowArray[28]) rowDict['Data Ayah - Jenjang Pendidikan'] = rowArray[28];
+              if (rowArray[29]) rowDict['Data Ayah - Pekerjaan'] = rowArray[29];
+              if (rowArray[30]) rowDict['Data Ayah - Penghasilan'] = rowArray[30];
+              if (rowArray[31]) rowDict['Data Ayah - NIK'] = rowArray[31];
+
+              // Ibu
+              if (rowArray[32]) rowDict['Data Ibu - Nama'] = rowArray[32];
+              if (rowArray[33]) rowDict['Data Ibu - Tahun Lahir'] = rowArray[33];
+              if (rowArray[34]) rowDict['Data Ibu - Jenjang Pendidikan'] = rowArray[34];
+              if (rowArray[35]) rowDict['Data Ibu - Pekerjaan'] = rowArray[35];
+              if (rowArray[36]) rowDict['Data Ibu - Penghasilan'] = rowArray[36];
+              if (rowArray[37]) rowDict['Data Ibu - NIK'] = rowArray[37];
+
+              // Wali
+              if (rowArray[38]) rowDict['Data Wali - Nama'] = rowArray[38];
+              if (rowArray[39]) rowDict['Data Wali - Tahun Lahir'] = rowArray[39];
+              if (rowArray[40]) rowDict['Data Wali - Jenjang Pendidikan'] = rowArray[40];
+              if (rowArray[41]) rowDict['Data Wali - Pekerjaan'] = rowArray[41];
+              if (rowArray[42]) rowDict['Data Wali - Penghasilan'] = rowArray[42];
+              if (rowArray[43]) rowDict['Data Wali - NIK'] = rowArray[43];
+
+              // Modul Lanjutan
+              if (rowArray[44]) rowDict['No Peserta Ujian Nasional'] = rowArray[44];
+              if (rowArray[45]) rowDict['No Seri Ijazah'] = rowArray[45];
+              if (rowArray[46]) rowDict['Penerima KIP'] = rowArray[46];
+              if (rowArray[47]) rowDict['Nomor KIP'] = rowArray[47];
+              if (rowArray[48]) rowDict['Nama di KIP'] = rowArray[48];
+              if (rowArray[49]) rowDict['Nomor KKS'] = rowArray[49];
+              if (rowArray[50]) rowDict['No Registrasi Akta Lahir'] = rowArray[50];
+              if (rowArray[51]) rowDict['Bank'] = rowArray[51];
+              if (rowArray[52]) rowDict['Nomor Rekening Bank'] = rowArray[52];
+              if (rowArray[53]) rowDict['Rekening Atas Nama'] = rowArray[53];
+              if (rowArray[54]) rowDict['Layak PIP (usulan dari sekolah)'] = rowArray[54];
+              if (rowArray[55]) rowDict['Alasan Layak PIP'] = rowArray[55];
+              if (rowArray[56]) rowDict['Kebutuhan Khusus'] = rowArray[56];
+              if (rowArray[57]) rowDict['Sekolah Asal'] = rowArray[57];
+              if (rowArray[58]) rowDict['Anak ke-berapa'] = rowArray[58];
+              if (rowArray[59]) rowDict['Lintang'] = rowArray[59];
+              if (rowArray[60]) rowDict['Bujur'] = rowArray[60];
+              if (rowArray[61]) rowDict['No KK'] = rowArray[61];
+              if (rowArray[62]) rowDict['Berat Badan'] = rowArray[62];
+              if (rowArray[63]) rowDict['Tinggi Badan'] = rowArray[63];
+              if (rowArray[64]) rowDict['Lingkar Kepala'] = rowArray[64];
+              if (rowArray[65]) rowDict['Jml. Saudara Kandung'] = rowArray[65];
+              if (rowArray[66]) rowDict['Jarak Rumah ke Sekolah (KM)'] = rowArray[66];
+            }
           }
 
           // Extract attributes with rich synonym getters
@@ -883,8 +981,8 @@ export async function parseExcelOrCsvFile(file: File): Promise<ImportParseSummar
             dusun: String(getCol(rowDict, 'Dusun', 'DUSUN') || '').trim(),
             kelurahanDesa: String(getCol(rowDict, 'Kelurahan', 'KELURAHAN_DESA', 'DESA') || '').trim(),
             kecamatan: String(getCol(rowDict, 'Kecamatan', 'KECAMATAN') || '').trim(),
-            kabupatenKota: String(getCol(rowDict, 'Kabupaten/Kota', 'KABUPATEN_KOTA', 'KOTA', 'KABUPATEN') || '').trim(),
-            provinsi: String(getCol(rowDict, 'Provinsi', 'PROVINSI') || 'Jawa Barat').trim(),
+            kabupatenKota: String(getCol(rowDict, 'Kabupaten', 'Kabupaten/Kota', 'KABUPATEN', 'KOTA', 'KABUPATEN_KOTA', 'Kabupaten / Kota', 'KAB') || '').trim(),
+            provinsi: String(getCol(rowDict, 'Provinsi', 'PROVINSI', 'PROP', 'Propinsi', 'PROPINSI') || '').trim(),
             kodePos: String(getCol(rowDict, 'Kode Pos', 'KODE_POS', 'KODEPOS') || '').trim(),
             tinggalDengan: (getCol(rowDict, 'Jenis Tinggal', 'TINGGAL_DENGAN', 'TINGGAL_BERSAMA') || 'Orang Tua') as any,
             jarakKeSekolahKm: Number(getCol(rowDict, 'Jarak Rumah ke Sekolah (KM)', 'JARAK_KE_SEKOLAH_KM', 'JARAK_KM') || 1),

@@ -220,7 +220,7 @@ export const ImportExcelModal: React.FC<ImportExcelModalProps> = ({ isOpen, onCl
                     </h4>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 pl-8">
-                    Gunakan template resmi berurutan 67 kolom field Dapodik Kemdikbud (No, Nama, NIPD, JK, NISN, Tempat/Tgl Lahir, Rombel, NIK, Usia, Agama, Alamat, Data Ayah/Ibu/Wali, KIP, PIP, Rekening Bank, Fisik, dll) lengkap dengan 2 baris contoh dan lembar panduan pengisian.
+                    Gunakan template resmi berurutan 69 kolom field Dapodik Kemdikbud (No, Nama, NIPD, JK, NISN, Tempat/Tgl Lahir, Rombel, NIK, Usia, Agama, Alamat, RT/RW, Dusun, Kelurahan, Kecamatan, Kabupaten, Provinsi, Kode Pos, Data Ayah/Ibu/Wali, KIP, PIP, Rekening Bank, Fisik, dll) lengkap dengan 2 baris contoh dan lembar panduan pengisian.
                   </p>
                 </div>
 
@@ -490,6 +490,7 @@ export const ImportExcelModal: React.FC<ImportExcelModalProps> = ({ isOpen, onCl
                       <th className="p-2.5 font-bold">Nama Lengkap</th>
                       <th className="p-2.5 font-bold">JK</th>
                       <th className="p-2.5 font-bold">Kelas</th>
+                      <th className="p-2.5 font-bold">Kabupaten & Provinsi</th>
                       <th className="p-2.5 font-bold">Nama Ayah/Ibu</th>
                       <th className="p-2.5 font-bold">Status Validasi</th>
                     </tr>
@@ -497,7 +498,7 @@ export const ImportExcelModal: React.FC<ImportExcelModalProps> = ({ isOpen, onCl
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {filteredRows.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="p-6 text-center text-slate-400 text-xs">
+                        <td colSpan={8} className="p-6 text-center text-slate-400 text-xs">
                           Tidak ada baris pada filter ini.
                         </td>
                       </tr>
@@ -534,6 +535,10 @@ export const ImportExcelModal: React.FC<ImportExcelModalProps> = ({ isOpen, onCl
                           </td>
                           <td className="p-2.5 font-bold text-slate-700 dark:text-slate-300">
                             {row.data.kelasSekarang || '7A'}
+                          </td>
+                          <td className="p-2.5 text-slate-700 dark:text-slate-300 text-[11px]">
+                            <div className="font-semibold">{row.data.kabupatenKota || '-'}</div>
+                            <div className="text-[10px] text-slate-400">{row.data.provinsi || '-'}</div>
                           </td>
                           <td className="p-2.5 text-slate-600 dark:text-slate-400 text-[11px]">
                             {row.data.ayah?.nama !== '-' ? row.data.ayah?.nama : row.data.ibu?.nama || '-'}
