@@ -342,12 +342,16 @@ export const EditLogoModal: React.FC<EditLogoModalProps> = ({
 
                   <div className="w-24 h-24 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden my-auto p-1.5 shadow-2xs">
                     {logoKiriUrl ? (
-                      <img 
-                        src={logoKiriUrl} 
-                        alt="Logo Sebelah Kiri" 
-                        className="w-full h-full object-contain" 
-                        referrerPolicy="no-referrer" 
-                      />
+                      logoKiriUrl.startsWith('preset:') ? (
+                        <OfficialNationalLogo logoIdOrUrl={logoKiriUrl} className="w-20 h-20" />
+                      ) : (
+                        <img 
+                          src={logoKiriUrl} 
+                          alt="Logo Sebelah Kiri" 
+                          className="w-full h-full object-contain" 
+                          referrerPolicy="no-referrer" 
+                        />
+                      )
                     ) : (
                       <TutWuriHandayaniSDLogo className="w-20 h-20" />
                     )}
@@ -645,12 +649,16 @@ export const EditLogoModal: React.FC<EditLogoModalProps> = ({
                   activeTab === 'kiri' ? "border-blue-500 ring-2 ring-blue-400/40" : "border-slate-200 dark:border-slate-700"
                 )}>
                   {logoKiriUrl ? (
-                    <img 
-                      src={logoKiriUrl} 
-                      alt="Logo Sebelah Kiri" 
-                      className="w-full h-full object-contain" 
-                      referrerPolicy="no-referrer"
-                    />
+                    logoKiriUrl.startsWith('preset:') ? (
+                      <OfficialNationalLogo logoIdOrUrl={logoKiriUrl} className="w-full h-full" />
+                    ) : (
+                      <img 
+                        src={logoKiriUrl} 
+                        alt="Logo Sebelah Kiri" 
+                        className="w-full h-full object-contain" 
+                        referrerPolicy="no-referrer"
+                      />
+                    )
                   ) : (
                     <TutWuriHandayaniSDLogo className="w-full h-full" />
                   )}

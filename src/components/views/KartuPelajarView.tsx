@@ -36,6 +36,68 @@ interface KartuPelajarViewProps {
 type CardTheme = 'kemdikbud-blue' | 'merah-putih' | 'merdeka-green' | 'royal-navy';
 type CardSide = 'front' | 'back' | 'both';
 
+/**
+ * Robust Logo Kiri renderer for Kartu Tanda Peserta (matching Kop Surat Header)
+ */
+const CardLogoKiri: React.FC<{
+  logoKiriUrl?: string;
+  logoUrl?: string;
+  className?: string;
+}> = ({ logoKiriUrl, logoUrl, className = "w-full h-full" }) => {
+  const [loadError, setLoadError] = useState(false);
+  const rawSource = (logoKiriUrl || logoUrl || '').trim();
+
+  // If empty or failed to load, fallback to standard Tut Wuri SD logo
+  if (!rawSource || loadError) {
+    return <TutWuriHandayaniSDLogo className={className} />;
+  }
+
+  // If preset ID
+  if (rawSource.startsWith('preset:')) {
+    return <OfficialNationalLogo logoIdOrUrl={rawSource} className={className} />;
+  }
+
+  return (
+    <img
+      src={rawSource}
+      alt="Logo Kiri (Kop Surat)"
+      className={`${className} object-contain`}
+      referrerPolicy="no-referrer"
+      onError={() => setLoadError(true)}
+    />
+  );
+};
+
+/**
+ * Robust Logo Kanan renderer for Kartu Tanda Peserta (matching Kop Surat Header)
+ */
+const CardLogoKanan: React.FC<{
+  logoKananUrl?: string;
+  tutWuriLogoUrl?: string;
+  className?: string;
+}> = ({ logoKananUrl, tutWuriLogoUrl, className = "w-full h-full" }) => {
+  const [loadError, setLoadError] = useState(false);
+  const rawSource = (logoKananUrl || tutWuriLogoUrl || 'preset:tut-wuri-sd').trim();
+
+  if (loadError) {
+    return <TutWuriHandayaniSDLogo className={className} />;
+  }
+
+  if (rawSource.startsWith('preset:')) {
+    return <OfficialNationalLogo logoIdOrUrl={rawSource} className={className} />;
+  }
+
+  return (
+    <img
+      src={rawSource}
+      alt="Logo Kanan (Kop Surat)"
+      className={`${className} object-contain`}
+      referrerPolicy="no-referrer"
+      onError={() => setLoadError(true)}
+    />
+  );
+};
+
 export const KartuPelajarView: React.FC<KartuPelajarViewProps> = ({
   selectedStudentId,
   onBack,
@@ -141,9 +203,10 @@ export const KartuPelajarView: React.FC<KartuPelajarViewProps> = ({
 
   const currentTheme = themeStyles[cardTheme];
 
-  // Helper to render Tut Wuri Handayani / National logo
+  // Helper to render National logo (matching Kop Surat Logo Kanan / Tut Wuri)
   const renderTutWuriLogo = (sizeClass = "w-7 h-7") => {
-    return <OfficialNationalLogo logoIdOrUrl={schoolProfile.tutWuriLogoUrl} className={sizeClass} />;
+    const logoSource = schoolProfile.logoKananUrl || schoolProfile.tutWuriLogoUrl || 'preset:tut-wuri-sd';
+    return <OfficialNationalLogo logoIdOrUrl={logoSource} className={sizeClass} />;
   };
 
   return (
@@ -374,14 +437,17 @@ export const KartuPelajarView: React.FC<KartuPelajarViewProps> = ({
 
                 {/* Top Ribbon Header */}
                 <div className={cn("px-2.5 py-1.5 flex items-center justify-between text-white shadow-xs relative z-10", currentTheme.headerBg, currentTheme.headerBorder)}>
-                  {/* Left: School Crest / Logo */}
+                  {/* Left: School Crest / Logo Kiri (Diselaraskan 100% dengan Logo Kiri Kop Surat) */}
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-7 h-7 rounded-md bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-xs border border-white/40 p-0.5">
-                      {(schoolProfile.logoKiriUrl || schoolProfile.logoUrl) && !(schoolProfile.logoKiriUrl || schoolProfile.logoUrl)?.startsWith('preset:') ? (
-                        <img src={schoolProfile.logoKiriUrl || schoolProfile.logoUrl} alt="Logo Sekolah" className="w-full h-full object-contain" />
-                      ) : (
-                        <TutWuriHandayaniSDLogo className="w-6 h-6" />
-                      )}
+                    <div 
+                      className="w-7.5 h-7.5 rounded-md bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-xs border border-white/60 p-0.5"
+                      title="Logo Sebelah Kiri Kop Surat"
+                    >
+                      <CardLogoKiri
+                        logoKiriUrl={schoolProfile.logoKiriUrl}
+                        logoUrl={schoolProfile.logoUrl}
+                        className="w-full h-full"
+                      />
                     </div>
 
                     <div className="min-w-0">
@@ -397,16 +463,23 @@ export const KartuPelajarView: React.FC<KartuPelajarViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Right: OFFICIAL TUT WURI HANDAYANI SD LOGO & CLASS BADGE */}
+                  {/* Right: OFFICIAL TUT WURI / LOGO KANAN KOP SURAT & CLASS BADGE */}
                   <div className="flex items-center gap-1.5 shrink-0 pl-1">
                     <div className="flex flex-col items-end">
                       <span className={cn("text-[7.5px] font-mono font-black px-1.5 py-0.5 rounded shadow-xs leading-tight uppercase", currentTheme.badgeBg)}>
                         {s.kelasSekarang}
                       </span>
                     </div>
-                    {/* Tut Wuri Handayani SD Logo in Top Right */}
-                    <div className="w-7 h-7 rounded-md bg-white flex items-center justify-center p-0.5 shadow-xs border border-amber-300/80">
-                      {renderTutWuriLogo("w-6 h-6")}
+                    {/* Logo Kanan Kop Surat in Top Right */}
+                    <div 
+                      className="w-7.5 h-7.5 rounded-md bg-white flex items-center justify-center p-0.5 shadow-xs border border-amber-300/80 overflow-hidden"
+                      title="Logo Sebelah Kanan Kop Surat"
+                    >
+                      <CardLogoKanan
+                        logoKananUrl={schoolProfile.logoKananUrl}
+                        tutWuriLogoUrl={schoolProfile.tutWuriLogoUrl}
+                        className="w-full h-full"
+                      />
                     </div>
                   </div>
                 </div>
