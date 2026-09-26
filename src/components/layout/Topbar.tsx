@@ -13,6 +13,7 @@ import {
   Sparkles,
   Users2,
   TrendingUp,
+  Calendar,
   FileSpreadsheet,
   Check,
   ChevronDown,
@@ -79,7 +80,6 @@ export const Topbar: React.FC<TopbarProps> = ({
     logout,
     darkMode, 
     toggleDarkMode, 
-    visitorStats,
     students,
     exportStudentsCSV,
     exportDatabaseJSON,
@@ -209,20 +209,24 @@ export const Topbar: React.FC<TopbarProps> = ({
         </div>
       </div>
 
-      {/* Right Section: Visitor Metric, Actions, Role Switcher, Dark Mode */}
+      {/* Right Section: Academic Year Badge, Actions, Role Switcher, Dark Mode */}
       <div className="flex items-center gap-2 md:gap-3">
-        {/* Key Metric: Visitor Analytics Chip (Laporan BCA style indicator) */}
-        <button
-          onClick={() => setActiveTab('analytics')}
-          className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-blue-900 dark:text-blue-200 text-xs hover:bg-blue-100 transition-colors"
-          title="Statistik Pengunjung Sistem"
-        >
-          <TrendingUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-          <div className="flex flex-col items-start leading-tight">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Pengunjung Hari Ini</span>
-            <span className="font-extrabold text-blue-700 dark:text-blue-300">{visitorStats.today} <span className="font-normal text-[10px] text-slate-500">({visitorStats.total} total)</span></span>
-          </div>
-        </button>
+        {/* Academic Year & Semester Badge */}
+        {setActiveTab && (
+          <button
+            onClick={() => setActiveTab('school-profile')}
+            className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-blue-900 dark:text-blue-200 text-xs hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+            title="Tahun Pelajaran & Semester Aktif (Klik untuk ubah di Profil Sekolah)"
+          >
+            <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <div className="flex flex-col items-start leading-tight">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Tahun Ajaran Aktif</span>
+              <span className="font-extrabold text-blue-700 dark:text-blue-300">
+                {schoolProfile.tahunPelajaranAktif || '2025/2026'} • {schoolProfile.semesterAktif || 'Ganjil'}
+              </span>
+            </div>
+          </button>
+        )}
 
         {/* Quick Add Student Button (Only for Admin & Guru) */}
         {currentRole !== 'umum' && (

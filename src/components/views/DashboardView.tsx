@@ -62,7 +62,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const { 
     students, 
     schoolProfile, 
-    visitorStats, 
     currentRole, 
     exportStudentsCSV,
     exportDatabaseJSON,
@@ -318,30 +317,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* Card 4: Key Business Metric - Pengunjung */}
+        {/* Card 4: Total Arsip Buku Induk */}
         <div 
-          onClick={() => setActiveTab('analytics')}
+          onClick={() => setActiveTab('students')}
           className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between cursor-pointer hover:border-blue-300 dark:hover:border-blue-800 transition-all group"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Jumlah Pengunjung Sistem
+              Total Arsip Buku Induk
             </span>
             <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Eye className="w-5 h-5" />
+              <BookOpen className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400 tracking-tight">
-                {visitorStats.today}
-              </span>
-              <span className="text-xs text-slate-500 font-medium">hari ini</span>
+            <div className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400 tracking-tight">
+              {totalStudents}
             </div>
             <div className="flex items-center justify-between mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-              <span>Total: <strong className="text-slate-700 dark:text-slate-200">{visitorStats.total}</strong> tayangan</span>
+              <span>Keseluruhan Rekam Historis</span>
               <span className="text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-0.5">
-                Detail <ArrowUpRight className="w-3 h-3" />
+                Lihat Data <ArrowUpRight className="w-3 h-3" />
               </span>
             </div>
           </div>
