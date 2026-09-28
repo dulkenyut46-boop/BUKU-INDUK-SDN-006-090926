@@ -224,16 +224,16 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
     },
     {
       id: 'export-csv',
-      title: 'Ekspor Data Siswa ke Microsoft Excel / CSV',
-      subtitle: 'Unduh Seluruh Database Siswa',
-      description: 'File spreadsheet lengkap berisi seluruh field biodata, NIS, NISN, NIK, orang tua, dan alamat siswa.',
+      title: 'Ekspor Data Siswa ke Microsoft Excel (.XLSX)',
+      subtitle: 'Format Rapi 100% Sesuai Template Buku Induk',
+      description: 'Berkas spreadsheet Microsoft Excel (.xlsx) resmi berisi 69 kolom lengkap, header bertingkat, serta lembar petunjuk pengisian yang siap pakai dan kompatibel untuk impor kembali.',
       category: 'ekspor',
       icon: FileSpreadsheet,
       iconBg: 'bg-emerald-50 dark:bg-emerald-950/60',
       iconColor: 'text-emerald-600 dark:text-emerald-400',
-      badge: '.CSV / Excel',
+      badge: 'Excel .XLSX',
       badgeColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
-      actionLabel: 'Unduh File Excel / CSV',
+      actionLabel: 'Unduh Berkas Excel (.xlsx)',
       onAction: () => exportStudentsCSV(),
     },
     {
@@ -305,9 +305,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
           <button
             onClick={() => exportStudentsCSV()}
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800 font-bold text-xs hover:bg-emerald-100 transition-colors cursor-pointer"
+            title="Ekspor seluruh data siswa ke format Excel (.xlsx) rapi standar Dapodik"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            <span>Ekspor Excel (.csv)</span>
+            <span>Ekspor Excel (.xlsx)</span>
           </button>
         </div>
       </div>

@@ -65,6 +65,7 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
     deleteAllStudents,
     currentRole, 
     exportStudentsCSV, 
+    exportStudentsExcel,
     importDatabaseJSON,
     exportDatabaseJSON
   } = useSchool();
@@ -275,14 +276,17 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
                 <span>Impor Excel</span>
               </button>
 
-              {/* Ekspor CSV / Excel */}
+              {/* Ekspor Data Siswa Excel (.XLSX) */}
               <button
-                onClick={exportStudentsCSV}
+                onClick={() => exportStudentsExcel({ filteredClass: selectedClass !== 'ALL' ? selectedClass : undefined })}
                 className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
-                title="Ekspor daftar siswa saat ini ke Excel / CSV"
+                title="Ekspor seluruh data siswa ke berkas spreadsheet Microsoft Excel (.XLSX) rapi format resmi template"
               >
-                <Download className="w-4 h-4" />
-                <span className="hidden md:inline">Ekspor CSV</span>
+                <FileSpreadsheet className="w-4 h-4 text-emerald-100" />
+                <span className="hidden md:inline">
+                  {selectedClass !== 'ALL' ? `Ekspor Excel (${selectedClass})` : 'Ekspor Excel (.XLSX)'}
+                </span>
+                <span className="md:hidden">Ekspor Excel</span>
               </button>
 
               {/* Cetak Buku Register / Daftar Siswa */}

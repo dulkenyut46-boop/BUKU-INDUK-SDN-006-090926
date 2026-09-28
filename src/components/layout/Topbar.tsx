@@ -277,7 +277,10 @@ export const Topbar: React.FC<TopbarProps> = ({
                   className="w-full text-left px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
                 >
                   <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                  <span>Ekspor Excel / CSV (.csv)</span>
+                  <div>
+                    <span className="font-semibold block">Ekspor Data Siswa Excel (.xlsx)</span>
+                    <span className="text-[10px] text-slate-500">Format rapi sesuai template Dapodik</span>
+                  </div>
                 </button>
                 <button
                   onClick={() => {

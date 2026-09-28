@@ -14,6 +14,7 @@ import {
 } from '../types';
 import { initialStudents, initialSchoolProfile, initialActivityLogs } from '../data/initialData';
 import { parseDbBackupText, DbBackupParseResult } from '../utils/dbBackupHelper';
+import { exportStudentsToExcel } from '../utils/excelHelper';
 import { 
   checkSqlStatus, 
   saveStudentToSql, 
@@ -289,7 +290,8 @@ interface SchoolContextType {
   exportDatabaseDB: () => void;
   getDatabaseBackupJsonString: () => string;
   getDatabaseBackupDbString: () => string;
-  exportStudentsCSV: () => void;
+  exportStudentsCSV: (options?: { filteredClass?: string }) => void;
+  exportStudentsExcel: (options?: { filteredClass?: string }) => void;
   importDatabaseJSON: (jsonData: string) => boolean;
   restoreDatabaseFromDB: (
     parsedOrRaw: string | DbBackupParseResult,
@@ -1238,71 +1240,22 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     logActivity('EXPORT', `Mengekspor basis data siswa ke file .db untuk pencadangan offline (${students.length} data)`);
   };
 
-  // Export as CSV
-  const exportStudentsCSV = () => {
-    const headers = [
-      'No Induk / NIS',
-      'NISN',
-      'NIK',
-      'Nama Lengkap',
-      'Jenis Kelamin',
-      'Tempat Lahir',
-      'Tanggal Lahir',
-      'Agama',
-      'Kelas Sekarang',
-      'Status',
-      'Alamat',
-      'RT',
-      'RW',
-      'Dusun',
-      'Kelurahan',
-      'Kecamatan',
-      'Kabupaten / Kota',
-      'Provinsi',
-      'Kode Pos',
-      'Nama Ayah',
-      'Pekerjaan Ayah',
-      'Nama Ibu',
-      'No HP Ortu',
-      'No Ijazah / STTB',
-    ];
+  // Export students to neat, official Excel (.xlsx) matching 100% with the Dapodik template
+  const exportStudentsExcel = (options?: { filteredClass?: string }) => {
+    let listToExport = students;
+    if (options?.filteredClass && options.filteredClass !== 'Semua') {
+      listToExport = students.filter(s => s.kelasSekarang === options.filteredClass);
+    }
+    exportStudentsToExcel(listToExport, schoolProfile.namaSekolah, {
+      filteredClass: options?.filteredClass,
+    });
+    const classInfo = options?.filteredClass && options.filteredClass !== 'Semua' ? ` (${options.filteredClass})` : '';
+    logActivity('EXPORT', `Mengekspor ${listToExport.length} data siswa ke berkas Microsoft Excel (.xlsx) rapi standar template Buku Induk${classInfo}`);
+  };
 
-    const rows = students.map(s => [
-      `"${s.noInduk}"`,
-      `"${s.nisn}"`,
-      `"${s.nik}"`,
-      `"${s.namaLengkap}"`,
-      `"${s.jenisKelamin === 'L' ? 'Laki-Laki' : 'Perempuan'}"`,
-      `"${s.tempatLahir}"`,
-      `"${s.tanggalLahir}"`,
-      `"${s.agama}"`,
-      `"${s.kelasSekarang}"`,
-      `"${s.status}"`,
-      `"${s.alamat.replace(/"/g, '""')}"`,
-      `"${s.rt || ''}"`,
-      `"${s.rw || ''}"`,
-      `"${s.dusun || ''}"`,
-      `"${s.kelurahanDesa || ''}"`,
-      `"${s.kecamatan || ''}"`,
-      `"${s.kabupatenKota || ''}"`,
-      `"${s.provinsi || ''}"`,
-      `"${s.kodePos || ''}"`,
-      `"${s.ayah.nama}"`,
-      `"${s.ayah.pekerjaan}"`,
-      `"${s.ibu.nama}"`,
-      `"${s.ayah.noHp || s.ibu.noHp || '-'}"`,
-      `"${s.sttb?.noIjazah || '-'}"`,
-    ]);
-
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `DATA_SISWA_BUKU_INDUK_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    logActivity('EXPORT', 'Mengekspor daftar siswa ke file CSV / Excel spreadsheet');
+  // Export as CSV / Excel (calls exportStudentsExcel for neat, formatted .xlsx matching template)
+  const exportStudentsCSV = (options?: { filteredClass?: string }) => {
+    exportStudentsExcel(options);
   };
 
   // Restore Database from DB or JSON
@@ -1678,6 +1631,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         getDatabaseBackupJsonString,
         getDatabaseBackupDbString,
         exportStudentsCSV,
+        exportStudentsExcel,
         importDatabaseJSON,
         restoreDatabaseFromDB,
         importStudentsBulk,

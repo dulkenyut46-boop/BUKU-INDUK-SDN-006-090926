@@ -552,6 +552,222 @@ export const downloadExcelTemplate = (schoolName: string = 'Sekolah') => {
 };
 
 /**
+ * Export students data into a neat, professionally styled Excel spreadsheet (.xlsx)
+ * matching 100% with the official 69-column Dapodik Kemdikbud template.
+ */
+export const exportStudentsToExcel = (
+  students: Student[],
+  schoolName: string = 'Sekolah',
+  options?: {
+    filteredClass?: string;
+  }
+) => {
+  const wb = XLSX.utils.book_new();
+
+  const studentRows = students.map((s, index) => {
+    // Calculate approximate age if not explicitly set
+    let ageVal: number | string = s.usia || '';
+    if (!ageVal && s.tanggalLahir) {
+      const birth = new Date(s.tanggalLahir);
+      if (!isNaN(birth.getTime())) {
+        const diff = Date.now() - birth.getTime();
+        ageVal = Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
+      }
+    }
+
+    return [
+      index + 1, // 1: No
+      s.namaLengkap || '', // 2: Nama
+      s.noInduk || '', // 3: NIPD (NIS)
+      s.jenisKelamin === 'P' ? 'P' : 'L', // 4: JK
+      s.nisn || '', // 5: NISN
+      s.tempatLahir || '', // 6: Tempat Lahir
+      s.tanggalLahir || '', // 7: Tanggal Lahir (YYYY-MM-DD)
+      s.kelasSekarang || 'Kelas 1', // 8: Rombel Saat Ini
+      s.nik || '', // 9: NIK
+      ageVal !== '' ? Number(ageVal) || ageVal : '', // 10: usia
+      s.agama || 'Islam', // 11: Agama
+      s.alamat || '', // 12: Alamat
+      s.rt || '', // 13: RT
+      s.rw || '', // 14: RW
+      s.dusun || '', // 15: Dusun
+      s.kelurahanDesa || '', // 16: Kelurahan
+      s.kecamatan || '', // 17: Kecamatan
+      s.kabupatenKota || '', // 18: Kabupaten
+      s.provinsi || '', // 19: Provinsi
+      s.kodePos || '', // 20: Kode Pos
+      s.tinggalDengan || 'Bersama Orang Tua', // 21: Jenis Tinggal
+      s.transportasi || 'Jalan Kaki', // 22: Alat Transportasi
+      s.ayah?.noHp || s.ibu?.noHp || '', // 23: Telepon
+      s.noHpSiswa || s.ayah?.noHp || s.ibu?.noHp || '', // 24: HP
+      s.emailSiswa || '', // 25: E-Mail
+      s.skhun || '', // 26: SKHUN
+      s.penerimaKps || 'Tidak', // 27: Penerima KPS
+      s.noKps || '', // 28: No. KPS
+      // Data Ayah (29-34)
+      s.ayah?.nama || '',
+      s.ayah?.tahunLahir ? String(s.ayah.tahunLahir) : '',
+      s.ayah?.pendidikan || '',
+      s.ayah?.pekerjaan || '',
+      s.ayah?.penghasilanBulanan || '',
+      s.ayah?.nik || '',
+      // Data Ibu (35-40)
+      s.ibu?.nama || '',
+      s.ibu?.tahunLahir ? String(s.ibu.tahunLahir) : '',
+      s.ibu?.pendidikan || '',
+      s.ibu?.pekerjaan || '',
+      s.ibu?.penghasilanBulanan || '',
+      s.ibu?.nik || '',
+      // Data Wali (41-46)
+      s.wali?.nama || '',
+      s.wali?.tahunLahir ? String(s.wali.tahunLahir) : '',
+      s.wali?.pendidikan || '',
+      s.wali?.pekerjaan || '',
+      s.wali?.penghasilanBulanan || '',
+      s.wali?.nik || '',
+      // Modul Ujian, KIP & Lainnya (47-69)
+      s.noPesertaUN || '', // 47
+      s.noSeriIjazah || s.sttb?.noIjazah || '', // 48
+      s.penerimaKip || 'Tidak', // 49
+      s.nomorKip || '', // 50
+      s.namaDiKip || '', // 51
+      s.nomorKks || '', // 52
+      s.noRegistrasiAktaLahir || '', // 53
+      s.bank || '', // 54
+      s.nomorRekeningBank || '', // 55
+      s.rekeningAtasNama || '', // 56
+      s.layakPip || 'Tidak', // 57
+      s.alasanLayakPip || '', // 58
+      s.kebutuhanKhusus || 'Tidak Ada', // 59
+      s.sekolahAsalTK || '', // 60
+      s.anakKe !== undefined && s.anakKe !== null ? Number(s.anakKe) : 1, // 61
+      s.lintang || '', // 62
+      s.bujur || '', // 63
+      s.noKk || '', // 64
+      s.kesehatan?.beratBadanKg !== undefined && s.kesehatan?.beratBadanKg !== null ? Number(s.kesehatan.beratBadanKg) : '', // 65
+      s.kesehatan?.tinggiBadanCm !== undefined && s.kesehatan?.tinggiBadanCm !== null ? Number(s.kesehatan.tinggiBadanCm) : '', // 66
+      s.lingkarKepala !== undefined && s.lingkarKepala !== null ? Number(s.lingkarKepala) : '', // 67
+      s.jumlahSaudaraKandung !== undefined && s.jumlahSaudaraKandung !== null ? Number(s.jumlahSaudaraKandung) : 0, // 68
+      s.jarakKeSekolahKm !== undefined && s.jarakKeSekolahKm !== null ? Number(s.jarakKeSekolahKm) : 1, // 69
+    ];
+  });
+
+  const aoaData = [
+    TEMPLATE_HEADER_ROW_1,
+    TEMPLATE_HEADER_ROW_2,
+    ...studentRows,
+  ];
+
+  const wsData = XLSX.utils.aoa_to_sheet(aoaData);
+
+  // Set Merges identically to the template:
+  const merges: XLSX.Range[] = [
+    ...Array.from({ length: 28 }, (_, i) => ({ s: { r: 0, c: i }, e: { r: 1, c: i } })),
+    { s: { r: 0, c: 28 }, e: { r: 0, c: 33 } }, // Data Ayah
+    { s: { r: 0, c: 34 }, e: { r: 0, c: 39 } }, // Data Ibu
+    { s: { r: 0, c: 40 }, e: { r: 0, c: 45 } }, // Data Wali
+    ...Array.from({ length: 23 }, (_, i) => ({ s: { r: 0, c: 46 + i }, e: { r: 1, c: 46 + i } })),
+  ];
+  wsData['!merges'] = merges;
+
+  // Set column widths matching 69 columns
+  const colWidths = [
+    { wch: 6 },  // 1: No
+    { wch: 28 }, // 2: Nama
+    { wch: 14 }, // 3: NIPD
+    { wch: 6 },  // 4: JK
+    { wch: 14 }, // 5: NISN
+    { wch: 18 }, // 6: Tempat Lahir
+    { wch: 14 }, // 7: Tanggal Lahir
+    { wch: 16 }, // 8: Rombel Saat Ini
+    { wch: 18 }, // 9: NIK
+    { wch: 8 },  // 10: usia
+    { wch: 14 }, // 11: Agama
+    { wch: 32 }, // 12: Alamat
+    { wch: 6 },  // 13: RT
+    { wch: 6 },  // 14: RW
+    { wch: 16 }, // 15: Dusun
+    { wch: 18 }, // 16: Kelurahan
+    { wch: 18 }, // 17: Kecamatan
+    { wch: 18 }, // 18: Kabupaten
+    { wch: 18 }, // 19: Provinsi
+    { wch: 10 }, // 20: Kode Pos
+    { wch: 18 }, // 21: Jenis Tinggal
+    { wch: 18 }, // 22: Alat Transportasi
+    { wch: 14 }, // 23: Telepon
+    { wch: 16 }, // 24: HP
+    { wch: 24 }, // 25: E-Mail
+    { wch: 14 }, // 26: SKHUN
+    { wch: 14 }, // 27: Penerima KPS
+    { wch: 14 }, // 28: No. KPS
+    // Data Ayah
+    { wch: 22 }, // 29: Nama
+    { wch: 12 }, // 30: Tahun Lahir
+    { wch: 18 }, // 31: Jenjang Pendidikan
+    { wch: 18 }, // 32: Pekerjaan
+    { wch: 22 }, // 33: Penghasilan
+    { wch: 18 }, // 34: NIK
+    // Data Ibu
+    { wch: 22 }, // 35: Nama
+    { wch: 12 }, // 36: Tahun Lahir
+    { wch: 18 }, // 37: Jenjang Pendidikan
+    { wch: 18 }, // 38: Pekerjaan
+    { wch: 22 }, // 39: Penghasilan
+    { wch: 18 }, // 40: NIK
+    // Data Wali
+    { wch: 22 }, // 41: Nama
+    { wch: 12 }, // 42: Tahun Lahir
+    { wch: 18 }, // 43: Jenjang Pendidikan
+    { wch: 18 }, // 44: Pekerjaan
+    { wch: 22 }, // 45: Penghasilan
+    { wch: 18 }, // 46: NIK
+    // Modul Ujian, KIP & Lainnya
+    { wch: 24 }, // 47: No Peserta Ujian Nasional
+    { wch: 24 }, // 48: No Seri Ijazah
+    { wch: 14 }, // 49: Penerima KIP
+    { wch: 16 }, // 50: Nomor KIP
+    { wch: 24 }, // 51: Nama di KIP
+    { wch: 16 }, // 52: Nomor KKS
+    { wch: 24 }, // 53: No Registrasi Akta Lahir
+    { wch: 12 }, // 54: Bank
+    { wch: 20 }, // 55: Nomor Rekening Bank
+    { wch: 24 }, // 56: Rekening Atas Nama
+    { wch: 26 }, // 57: Layak PIP (usulan dari sekolah)
+    { wch: 22 }, // 58: Alasan Layak PIP
+    { wch: 18 }, // 59: Kebutuhan Khusus
+    { wch: 24 }, // 60: Sekolah Asal
+    { wch: 14 }, // 61: Anak ke-berapa
+    { wch: 14 }, // 62: Lintang
+    { wch: 14 }, // 63: Bujur
+    { wch: 18 }, // 64: No KK
+    { wch: 12 }, // 65: Berat Badan
+    { wch: 12 }, // 66: Tinggi Badan
+    { wch: 14 }, // 67: Lingkar Kepala
+    { wch: 20 }, // 68: Jml. Saudara Kandung
+    { wch: 24 }, // 69: Jarak Rumah ke Sekolah (KM)
+  ];
+  wsData['!cols'] = colWidths;
+
+  XLSX.utils.book_append_sheet(wb, wsData, 'DATA_SISWA');
+
+  // Sheet 2: PETUNJUK_PENGISIAN
+  const wsGuide = XLSX.utils.json_to_sheet(TEMPLATE_INSTRUCTIONS);
+  wsGuide['!cols'] = [{ wch: 6 }, { wch: 26 }, { wch: 64 }, { wch: 30 }];
+  XLSX.utils.book_append_sheet(wb, wsGuide, 'PETUNJUK_PENGISIAN');
+
+  // File Name
+  const cleanSchool = schoolName.replace(/[^a-zA-Z0-9]/g, '_');
+  const classSuffix = options?.filteredClass && options.filteredClass !== 'Semua' 
+    ? `_${options.filteredClass.replace(/[^a-zA-Z0-9]/g, '_')}` 
+    : '';
+  const dateStr = new Date().toISOString().split('T')[0];
+  const fileName = `DATA_SISWA_BUKU_INDUK_${cleanSchool}${classSuffix}_${dateStr}.xlsx`;
+
+  // Trigger download
+  XLSX.writeFile(wb, fileName);
+};
+
+/**
  * Format string into standard date YYYY-MM-DD
  */
 function normalizeDate(val: any): string {
