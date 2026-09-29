@@ -238,27 +238,15 @@ export const MutasiView: React.FC<MutasiViewProps> = ({
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* Tombol Edit Mutasi (sebelumnya Batalkan Mutasi) */}
+                        {/* Tombol Edit Mutasi */}
                         {canManageMutation && (
                           <button
                             onClick={() => onOpenMutationModal(student)}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                             title="Edit data dan catatan mutasi siswa"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                             <span>Edit Mutasi</span>
-                          </button>
-                        )}
-
-                        {/* Tombol Batalkan Mutasi (Kembalikan Siswa ke Status Aktif) */}
-                        {canManageMutation && (
-                          <button
-                            onClick={() => handleOpenCancelDialog(student)}
-                            className="flex items-center gap-1 px-2 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
-                            title="Batalkan mutasi dan aktifkan kembali siswa di Buku Induk"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            <span>Batal Mutasi</span>
                           </button>
                         )}
 
