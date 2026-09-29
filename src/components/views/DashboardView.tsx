@@ -48,8 +48,6 @@ import { Student } from '../../types';
 import { cn, formatIndonesianDate } from '../../lib/utils';
 import { TabelDistribusiPeringkat } from '../analytics/TabelDistribusiPeringkat';
 import { EditTahunPelajaranModal } from '../modals/EditTahunPelajaranModal';
-import { calculateSchoolAlerts } from '../../utils/alertNotificationHelper';
-import { DashboardAlertBanner } from '../alerts/DashboardAlertBanner';
 
 interface DashboardViewProps {
   setActiveTab: (tab: ActiveTab) => void;
@@ -82,12 +80,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const activeSemester = schoolProfile.semesterAktif || 'Ganjil';
   const [chartMode, setChartMode] = useState<'grouped' | 'stacked'>('grouped');
   const [isEditTPModalOpen, setIsEditTPModalOpen] = useState(false);
-
-  // Operational alerts: Mutation deadlines & Diploma/STTB validity
-  const alerts = useMemo(
-    () => calculateSchoolAlerts(students, schoolProfile),
-    [students, schoolProfile]
-  );
 
   // Metrics calculation
   const totalStudents = students.length;
@@ -239,16 +231,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Batas Waktu Mutasi & Masa Berlaku Ijazah Alerts Banner */}
-      <DashboardAlertBanner
-        alerts={alerts}
-        students={students}
-        onSelectStudentDetail={onSelectStudentDetail}
-        onMutasi={onMutasi}
-        onSTTB={onSTTB}
-        setActiveTab={setActiveTab}
-      />
 
       {/* KPI Cards Grid */}
       {/* Alert Banner: Empty School Profile Fields Notification */}
