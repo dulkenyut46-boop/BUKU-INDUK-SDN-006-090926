@@ -609,26 +609,14 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
 
                       {/* Status */}
                       <td className="p-3">
-                        {student.status === 'Mutasi Keluar' && currentRole !== 'umum' ? (
-                          <button
-                            type="button"
-                            onClick={() => onMutasi(student)}
-                            className="px-2.5 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800 hover:bg-amber-200 dark:hover:bg-amber-900 transition-colors cursor-pointer inline-flex items-center gap-1"
-                            title="Klik untuk Edit Mutasi Siswa"
-                          >
-                            <span>{student.status}</span>
-                            <Edit3 className="w-2.5 h-2.5" />
-                          </button>
-                        ) : (
-                          <span className={cn(
-                            "px-2.5 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider",
-                            student.status === 'Aktif' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800' :
-                            student.status === 'Lulus' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800' :
-                            'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
-                          )}>
-                            {student.status}
-                          </span>
-                        )}
+                        <span className={cn(
+                          "px-2.5 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider",
+                          student.status === 'Aktif' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800' :
+                          student.status === 'Lulus' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800' :
+                          'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                        )}>
+                          {student.status}
+                        </span>
                       </td>
 
                       {/* Actions */}
@@ -658,18 +646,18 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
                             <CreditCard className="w-4 h-4 text-purple-600" />
                           </button>
 
+                          {student.status === 'Mutasi Keluar' && currentRole !== 'umum' && (
+                            <button
+                              onClick={() => onMutasi(student)}
+                              className="p-1.5 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/60 transition-colors cursor-pointer"
+                              title="Edit Catatan Mutasi Siswa"
+                            >
+                              <UserMinus className="w-4 h-4 text-orange-600" />
+                            </button>
+                          )}
+
                           {currentRole !== 'umum' && (
                             <>
-                              {student.status === 'Mutasi Keluar' && (
-                                <button
-                                  onClick={() => onMutasi(student)}
-                                  className="p-1.5 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/60 transition-colors"
-                                  title="Edit Mutasi Siswa"
-                                >
-                                  <UserMinus className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                                </button>
-                              )}
-
                               <button
                                 onClick={() => onEditStudent(student)}
                                 className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"

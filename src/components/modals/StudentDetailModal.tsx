@@ -298,10 +298,10 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                   <span>Mutasi Keluar</span>
                 </button>
               )}
-              {student.status === 'Mutasi Keluar' && (
+              {student.status === 'Mutasi Keluar' && rolePermissions?.inputMutasi !== false && (
                 <button
                   onClick={() => onMutasi(student)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-orange-100 dark:bg-orange-900/50 hover:bg-orange-200 text-orange-900 dark:text-orange-200 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-100 dark:bg-amber-900/50 hover:bg-amber-200 text-amber-900 dark:text-amber-200 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                   title="Edit Catatan Mutasi Siswa"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
@@ -1122,16 +1122,16 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                     </div>
 
                     {currentRole !== 'umum' && rolePermissions?.inputMutasi !== false && (
-                      <div className="pt-2 border-t border-orange-200 dark:border-orange-900/60 flex flex-wrap items-center justify-between gap-2">
+                      <div className="pt-2 border-t border-orange-200 dark:border-orange-900/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <span className="text-[11px] text-orange-700 dark:text-orange-300">
-                          Perlu memperbarui catatan atau membatalkan mutasi?
+                          Siswa berstatus keluar. Kelola status atau catatan mutasi:
                         </span>
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
                             onClick={() => onMutasi(student)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
-                            title="Edit data dan alasan mutasi siswa"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                            title="Edit data dan catatan mutasi siswa"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                             <span>Edit Mutasi</span>
@@ -1142,8 +1142,8 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                               setRestoreClassChoice(student.mutasi?.dariKelas || student.kelasSekarang || 'Kelas 1');
                               setShowCancelConfirm(true);
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
-                            title="Batalkan mutasi dan aktifkan kembali siswa"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                            title="Batalkan mutasi dan aktifkan kembali siswa di Buku Induk"
                           >
                             <RotateCcw className="w-3.5 h-3.5" />
                             <span>Batalkan Mutasi</span>

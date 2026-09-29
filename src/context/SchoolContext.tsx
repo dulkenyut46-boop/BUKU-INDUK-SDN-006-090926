@@ -23,14 +23,6 @@ import {
   syncAllToSql, 
   fetchStudentsFromSql 
 } from '../services/sqlDatabaseService';
-import { 
-  idbGet, 
-  idbDelete, 
-  safeLocalStorageGet, 
-  safeLocalStorageSet, 
-  safeLocalStorageRemove, 
-  persistStudentsResiliently 
-} from '../utils/storageHelper';
 
 export const defaultPermissions: Record<UserRole, RolePermissions> = {
   admin: {
@@ -332,32 +324,13 @@ const STORAGE_KEY_CURRENT_USER = 'buku_induk_current_user_v1';
 export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Load students from localStorage or initial
   const [students, setStudents] = useState<Student[]>(() => {
-    return safeLocalStorageGet<Student[]>(STORAGE_KEY_STUDENTS, initialStudents);
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_STUDENTS);
+      return saved ? JSON.parse(saved) : initialStudents;
+    } catch {
+      return initialStudents;
+    }
   });
-
-  // Asynchronously hydrate from IndexedDB on startup (unlimited storage, preserves full images)
-  useEffect(() => {
-    let isMounted = true;
-    idbGet<Student[]>('students')
-      .then((idbStudents) => {
-        if (isMounted && idbStudents && Array.isArray(idbStudents) && idbStudents.length > 0) {
-          setStudents((current) => {
-            // If IndexedDB has records, hydrate it
-            if (idbStudents.length >= current.length) {
-              return idbStudents;
-            }
-            return current;
-          });
-        }
-      })
-      .catch((err) => {
-        console.warn('Gagal memuat siswa dari IndexedDB:', err);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   // Load school profile
   const [schoolProfile, setSchoolProfile] = useState<SchoolProfile>(() => {
@@ -502,40 +475,40 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       document.documentElement.setAttribute('data-theme', 'light');
       document.documentElement.style.colorScheme = 'light';
     }
-    safeLocalStorageSet(STORAGE_KEY_DARK, JSON.stringify(darkMode));
+    localStorage.setItem(STORAGE_KEY_DARK, JSON.stringify(darkMode));
   }, [darkMode]);
 
-  // Sync to resilient storage (IndexedDB + safe localStorage cache with quota protection)
+  // Sync to local storage
   useEffect(() => {
-    persistStudentsResiliently(STORAGE_KEY_STUDENTS, students);
+    localStorage.setItem(STORAGE_KEY_STUDENTS, JSON.stringify(students));
   }, [students]);
 
   useEffect(() => {
-    safeLocalStorageSet(STORAGE_KEY_SCHOOL, JSON.stringify(schoolProfile));
+    localStorage.setItem(STORAGE_KEY_SCHOOL, JSON.stringify(schoolProfile));
   }, [schoolProfile]);
 
   useEffect(() => {
-    safeLocalStorageSet(STORAGE_KEY_LOGS, JSON.stringify(activityLogs));
+    localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(activityLogs));
   }, [activityLogs]);
 
   useEffect(() => {
-    safeLocalStorageSet(STORAGE_KEY_ROLE, currentRole);
+    localStorage.setItem(STORAGE_KEY_ROLE, currentRole);
   }, [currentRole]);
 
   useEffect(() => {
-    safeLocalStorageSet(STORAGE_KEY_PERMISSIONS, JSON.stringify(rolePermissions));
+    localStorage.setItem(STORAGE_KEY_PERMISSIONS, JSON.stringify(rolePermissions));
   }, [rolePermissions]);
 
   useEffect(() => {
-    safeLocalStorageSet(STORAGE_KEY_USERS, JSON.stringify(adminUsers));
+    localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(adminUsers));
   }, [adminUsers]);
 
   useEffect(() => {
-    safeLocalStorageSet(STORAGE_KEY_SECURITY, JSON.stringify(securitySettings));
+    localStorage.setItem(STORAGE_KEY_SECURITY, JSON.stringify(securitySettings));
   }, [securitySettings]);
 
   useEffect(() => {
-    safeLocalStorageSet(STORAGE_KEY_AUTH, JSON.stringify(isAuthenticated));
+    localStorage.setItem(STORAGE_KEY_AUTH, JSON.stringify(isAuthenticated));
   }, [isAuthenticated]);
 
   // Cloud SQL (PostgreSQL) Status
@@ -559,9 +532,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     if (currentUser) {
-      safeLocalStorageSet(STORAGE_KEY_CURRENT_USER, JSON.stringify(currentUser));
+      localStorage.setItem(STORAGE_KEY_CURRENT_USER, JSON.stringify(currentUser));
     } else {
-      safeLocalStorageRemove(STORAGE_KEY_CURRENT_USER);
+      localStorage.removeItem(STORAGE_KEY_CURRENT_USER);
     }
   }, [currentUser]);
 
@@ -574,7 +547,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       live: Math.floor(Math.random() * 5) + 4,
     };
     setVisitorStats(updated);
-    safeLocalStorageSet(STORAGE_KEY_VISITORS, JSON.stringify(updated));
+    localStorage.setItem(STORAGE_KEY_VISITORS, JSON.stringify(updated));
   }, []);
 
   const toggleDarkMode = () => {
@@ -944,8 +917,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const deleteAllStudents = () => {
     const count = students.length;
     setStudents([]);
-    idbDelete('students').catch(() => {});
-    safeLocalStorageRemove(STORAGE_KEY_STUDENTS);
+    localStorage.removeItem(STORAGE_KEY_STUDENTS);
     logActivity('HAPUS', `Menghapus seluruh data siswa (${count} siswa) dari Buku Induk`);
   };
 
@@ -955,22 +927,31 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const processMutation = (id: string, mutation: MutationRecord) => {
     const actor = getActiveUserDisplayName();
+    const target = students.find(s => s.id === id);
+    const isEdit = !!target?.mutasi;
+
     setStudents(prev =>
       prev.map(st => {
         if (st.id === id) {
-          return {
+          const updated: Student = {
             ...st,
             status: 'Mutasi Keluar',
             mutasi: mutation,
             terakhirDiubahOleh: actor,
             updatedAt: new Date().toISOString(),
           };
+          saveStudentToSql(updated).catch((err) => console.warn('SQL background save mutation error:', err));
+          return updated;
         }
         return st;
       })
     );
-    const target = students.find(s => s.id === id);
-    logActivity('MUTASI', `Pencatatan mutasi keluar siswa: ${target?.namaLengkap} ke ${mutation.sekolahTujuan}`, id);
+
+    logActivity(
+      'MUTASI',
+      `${isEdit ? 'Memperbarui data/catatan mutasi' : 'Pencatatan mutasi keluar'} siswa: ${target?.namaLengkap || 'Siswa'} ke ${mutation.sekolahTujuan}`,
+      id
+    );
   };
 
   const cancelMutation = (id: string, restoreClass?: string) => {
@@ -983,7 +964,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setStudents(prev =>
       prev.map(st => {
         if (st.id === id) {
-          return {
+          const updated: Student = {
             ...st,
             status: 'Aktif' as StudentStatus,
             kelasSekarang: classToRestore,
@@ -991,6 +972,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             terakhirDiubahOleh: actor,
             updatedAt: new Date().toISOString(),
           };
+          saveStudentToSql(updated).catch((err) => console.warn('SQL background save cancel mutation error:', err));
+          return updated;
         }
         return st;
       })
@@ -1578,13 +1561,12 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setRolePermissions(defaultPermissions);
     setAdminUsers(initialAdminUsers);
     setSecuritySettings(initialSecuritySettings);
-    idbDelete('students').catch(() => {});
-    safeLocalStorageRemove(STORAGE_KEY_STUDENTS);
-    safeLocalStorageRemove(STORAGE_KEY_SCHOOL);
-    safeLocalStorageRemove(STORAGE_KEY_LOGS);
-    safeLocalStorageRemove(STORAGE_KEY_PERMISSIONS);
-    safeLocalStorageRemove(STORAGE_KEY_USERS);
-    safeLocalStorageRemove(STORAGE_KEY_SECURITY);
+    localStorage.removeItem(STORAGE_KEY_STUDENTS);
+    localStorage.removeItem(STORAGE_KEY_SCHOOL);
+    localStorage.removeItem(STORAGE_KEY_LOGS);
+    localStorage.removeItem(STORAGE_KEY_PERMISSIONS);
+    localStorage.removeItem(STORAGE_KEY_USERS);
+    localStorage.removeItem(STORAGE_KEY_SECURITY);
     logActivity('PENGATURAN', 'Mereset database Buku Induk kembali ke data bawaan sistem');
   };
 
