@@ -152,19 +152,25 @@ export const initDriveAuth = (
   }
 
   // Also listen to Firebase Auth in case user previously signed in via Firebase
-  const unsubscribeFirebase = onAuthStateChanged(auth, async (user: User | null) => {
-    if (user && !cachedUser) {
-      cachedUser = {
-        uid: user.uid,
-        displayName: user.displayName,
-        email: user.email,
-        photoURL: user.photoURL,
-      };
-      if (cachedAccessToken && onAuthSuccess) {
-        onAuthSuccess(cachedUser, cachedAccessToken);
+  const unsubscribeFirebase = onAuthStateChanged(
+    auth, 
+    async (user: User | null) => {
+      if (user && !cachedUser) {
+        cachedUser = {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+        };
+        if (cachedAccessToken && onAuthSuccess) {
+          onAuthSuccess(cachedUser, cachedAccessToken);
+        }
       }
+    },
+    (err) => {
+      console.warn('Firebase auth state listener warning:', err?.message || err);
     }
-  });
+  );
 
   return () => {
     authSubscribers.delete(subscriber);
@@ -262,7 +268,7 @@ export const signInWithGoogleDrive = async (): Promise<{ user: DriveUser; access
       
       // If user specifically clicked Cancel / access_denied, rethrow without fallback
       if (gisError?.message?.includes('ditolak oleh pengguna')) {
-        throw gisError;
+        throw (gisError instanceof Error ? gisError : new Error(gisError?.message || 'Izin akses Google Drive ditolak oleh pengguna.'));
       }
 
       // 2. Fallback method: Firebase Auth Popup
@@ -299,8 +305,9 @@ export const signInWithGoogleDrive = async (): Promise<{ user: DriveUser; access
           throw enhancedError;
         }
 
-        // Rethrow original or GIS error
-        throw fbError || gisError;
+        // Rethrow original or GIS error safely
+        const finalError = fbError || gisError || new Error('Gagal menghubungkan akun Google.');
+        throw (finalError instanceof Error ? finalError : new Error(finalError?.message || 'Gagal login Google'));
       }
     }
   } finally {

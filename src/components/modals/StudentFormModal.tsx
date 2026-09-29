@@ -29,6 +29,8 @@ import { Student, Gender, Religion, StudentStatus, ParentInfo, GuardianInfo, Hea
 import { cn } from '../../lib/utils';
 import { useSchool } from '../../context/SchoolContext';
 import { ManageClassesModal, defaultClassList } from './ManageClassesModal';
+import { compressPasfotoFile } from '../../utils/imageCompressor';
+import { safeLocalStorageSet } from '../../utils/storageHelper';
 
 interface StudentFormModalProps {
   isOpen: boolean;
@@ -402,15 +404,26 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({
           studentId: studentToEdit?.id,
           isEdit: Boolean(studentToEdit),
         };
-        localStorage.setItem(draftKey, JSON.stringify(draft));
-        localStorage.setItem(MODAL_OPEN_STATE_KEY, JSON.stringify({
+
+        const json = JSON.stringify(draft);
+        const success = safeLocalStorageSet(draftKey, json);
+        if (!success && draft.formData.fotoUrl?.startsWith('data:')) {
+          // If quota reached, save draft without heavy base64 photo
+          const leanDraft = {
+            ...draft,
+            formData: { ...draft.formData, fotoUrl: '' }
+          };
+          safeLocalStorageSet(draftKey, JSON.stringify(leanDraft));
+        }
+
+        safeLocalStorageSet(MODAL_OPEN_STATE_KEY, JSON.stringify({
           isOpen: true,
           isEdit: Boolean(studentToEdit),
           studentId: studentToEdit?.id || null,
         }));
         setLastSavedTime(timeStr);
       } catch (err) {
-        console.error('Auto-save gagal menyimpan:', err);
+        console.warn('Auto-save gagal menyimpan:', err);
       } finally {
         setIsSavingDraft(false);
       }
@@ -439,8 +452,8 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({
           studentId: studentToEdit?.id,
           isEdit: Boolean(studentToEdit),
         };
-        localStorage.setItem(draftKey, JSON.stringify(draft));
-        localStorage.setItem(MODAL_OPEN_STATE_KEY, JSON.stringify({
+        safeLocalStorageSet(draftKey, JSON.stringify(draft));
+        safeLocalStorageSet(MODAL_OPEN_STATE_KEY, JSON.stringify({
           isOpen: true,
           isEdit: Boolean(studentToEdit),
           studentId: studentToEdit?.id || null,
@@ -632,20 +645,32 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({
     return { bmi: bmi.toFixed(1), category, color };
   };
 
-  // Handle local file upload for photo
-  const handlePhotoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle local file upload for photo with automatic compression
+  const handlePhotoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 3 * 1024 * 1024) {
-        alert('Ukuran file foto maksimal 3MB');
+      if (!file.type.startsWith('image/')) {
+        setErrors(prev => ({ ...prev, fotoUrl: 'Format berkas harus berupa gambar (JPG, PNG, WEBP)' }));
         return;
       }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64 = event.target?.result as string;
-        updateField('fotoUrl', base64);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressPasfotoFile(file, 480, 640, 0.82);
+        updateField('fotoUrl', compressed.dataUrl);
+        setErrors(prev => {
+          const updated = { ...prev };
+          delete updated.fotoUrl;
+          return updated;
+        });
+      } catch (err: any) {
+        console.warn('Gagal kompresi pasfoto siswa:', err);
+        // Fallback to basic file reader
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64 = event.target?.result as string;
+          updateField('fotoUrl', base64);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 

@@ -159,7 +159,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
     { tanggal: '16 Agu', pengunjung: 40, tampilanHalaman: 125 },
     { tanggal: '17 Agu', pengunjung: 60, tampilanHalaman: 210 },
     { tanggal: '18 Agu', pengunjung: 55, tampilanHalaman: 180 },
-    { tanggal: '19 Agu', pengunjung: visitorStats.today, tampilanHalaman: visitorStats.today * 3 },
+    { tanggal: '19 Agu', pengunjung: visitorStats?.today ?? 86, tampilanHalaman: (visitorStats?.today ?? 86) * 3 },
   ];
 
   // Device split
@@ -170,15 +170,15 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   ];
 
   // Custom Tooltip for Student Grade & Gender Bar Chart
-  const CustomBarTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
+  const CustomBarTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length && payload[0]?.payload) {
       const data = payload[0].payload;
       return (
         <div className="bg-slate-900/95 backdrop-blur-xs text-white p-3.5 rounded-xl shadow-xl border border-slate-700 text-xs min-w-[200px] space-y-2">
           <div className="font-extrabold text-sm border-b border-slate-700/80 pb-1.5 flex items-center justify-between">
-            <span className="text-white">{data.kelas}</span>
+            <span className="text-white">{data.kelas || '-'}</span>
             <span className="text-slate-300 font-normal text-[11px] bg-slate-800 px-2 py-0.5 rounded-md">
-              {data.total} Siswa
+              {data.total || 0} Siswa
             </span>
           </div>
           <div className="space-y-1.5 pt-0.5">
@@ -187,18 +187,18 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shadow-xs" />
                 Laki-laki (L):
               </span>
-              <span className="font-bold">{data.lakiLaki} ({data.pctLaki}%)</span>
+              <span className="font-bold">{data.lakiLaki || 0} ({data.pctLaki || 0}%)</span>
             </div>
             <div className="flex items-center justify-between text-pink-300 font-semibold">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-pink-500 inline-block shadow-xs" />
                 Perempuan (P):
               </span>
-              <span className="font-bold">{data.perempuan} ({data.pctPerempuan}%)</span>
+              <span className="font-bold">{data.perempuan || 0} ({data.pctPerempuan || 0}%)</span>
             </div>
             <div className="border-t border-slate-700/80 pt-1.5 flex items-center justify-between text-slate-200 font-extrabold">
               <span>Total Rombel:</span>
-              <span className="text-emerald-400">{data.total} Peserta Didik</span>
+              <span className="text-emerald-400">{data.total || 0} Peserta Didik</span>
             </div>
           </div>
         </div>

@@ -81,7 +81,7 @@ export const STTBModal: React.FC<STTBModalProps> = ({
     setUploadError(null);
     setIsCompressing(true);
     try {
-      const result = await compressImageFile(file, 1400, 1400, 0.85);
+      const result = await compressImageFile(file, 1000, 1000, 0.78);
       setFormData(prev => ({
         ...prev,
         fotoIjazah: result.dataUrl,

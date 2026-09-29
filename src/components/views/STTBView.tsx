@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { GraduationCap, Printer, Search, CheckCircle2, FileCheck, Award, ArrowLeft } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { GraduationCap, Printer, Search, CheckCircle2, FileCheck, Award, ArrowLeft, AlertTriangle, AlertCircle, Clock, Sparkles } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
 import { Student } from '../../types';
 import { formatIndonesianDate, cn } from '../../lib/utils';
 import { KopSuratHeader } from '../layout/KopSuratHeader';
+import { calculateSchoolAlerts } from '../../utils/alertNotificationHelper';
 
 interface STTBViewProps {
   onOpenSTTBModal: (student: Student) => void;
@@ -23,6 +24,12 @@ export const STTBView: React.FC<STTBViewProps> = ({
   const [selectedYear, setSelectedYear] = useState('ALL');
   const [selectedStudentForReceipt, setSelectedStudentForReceipt] = useState<Student | null>(null);
   const [isPrintingRegister, setIsPrintingRegister] = useState(false);
+
+  // Operational alerts for Ijazah & STTB
+  const ijazahAlerts = useMemo(
+    () => calculateSchoolAlerts(students, schoolProfile).filter(a => a.category === 'ijazah' || a.category === 'dapodik'),
+    [students, schoolProfile]
+  );
 
   // Filter students who graduated or have STTB info
   const graduatedStudents = students.filter(s => s.sttb || s.status === 'Lulus' || s.kelasSekarang === 'Kelas 6');
@@ -120,6 +127,79 @@ export const STTBView: React.FC<STTBViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* Alert Peringatan Masa Berlaku & Pengambilan Ijazah */}
+      {ijazahAlerts.length > 0 && (
+        <div className="no-print p-4 md:p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/80 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-emerald-600 text-white font-black shrink-0 shadow-xs">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs md:text-sm font-black text-slate-900 dark:text-slate-100">
+                  {ijazahAlerts.length} Peringatan Blangko, Masa Berlaku & Pengambilan Ijazah
+                </h4>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                  Masa berlaku SKL Sementara (maks. 6 bulan), alumni yang belum mengambil dokumen fisik, atau nomor seri ijazah belum diinput.
+                </p>
+              </div>
+            </div>
+            <span className="hidden sm:inline-block px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 uppercase">
+              Verifikasi Ijazah
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            {ijazahAlerts.map(alert => (
+              <div
+                key={alert.id}
+                className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/60 flex flex-col justify-between gap-2.5 text-xs shadow-xs"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-black text-slate-900 dark:text-slate-100 truncate">
+                      {alert.studentName}
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-500 shrink-0">
+                      NIS: {alert.nis || '-'}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-emerald-800 dark:text-emerald-300 font-bold mt-1">
+                    {alert.title}
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                    {alert.message}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 font-semibold">
+                    <Clock className="w-3 h-3 text-emerald-500" />
+                    {alert.dueDateOrDaysAgo}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const s = students.find(item => item.id === alert.studentId);
+                      if (s) {
+                        if (alert.actionType === 'sttb') {
+                          onOpenSTTBModal(s);
+                        } else {
+                          onSelectStudentDetail(s.id);
+                        }
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shrink-0 transition-colors shadow-xs cursor-pointer"
+                  >
+                    {alert.actionType === 'sttb' ? 'Input / Serah Terima' : 'Lengkapi Data'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filter and stats */}
       <div className="no-print grid grid-cols-1 sm:grid-cols-3 gap-4">

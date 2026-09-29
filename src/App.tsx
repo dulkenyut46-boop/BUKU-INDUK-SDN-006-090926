@@ -260,6 +260,8 @@ const MainAppContent: React.FC = () => {
           setActiveTab={setActiveTab}
           onSelectStudentDetail={handleSelectStudentDetail}
           onOpenRestoreDatabase={() => setIsRestoreModalOpen(true)}
+          onMutasi={handleOpenMutation}
+          onSTTB={handleOpenSTTB}
         />
 
         {/* Dynamic Page Views */}
@@ -270,6 +272,8 @@ const MainAppContent: React.FC = () => {
                 setActiveTab={setActiveTab}
                 onOpenAddModal={handleOpenAddModal}
                 onSelectStudentDetail={handleSelectStudentDetail}
+                onMutasi={handleOpenMutation}
+                onSTTB={handleOpenSTTB}
               />
             )}
 

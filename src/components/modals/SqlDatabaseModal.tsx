@@ -45,24 +45,30 @@ export const SqlDatabaseModal: React.FC<SqlDatabaseModalProps> = ({
 
   // Monitor Firebase Auth state
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-      if (user) {
-        // Sync user to SQL database
-        try {
-          const token = await user.getIdToken();
-          await fetch('/api/auth/sync-user', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          });
-        } catch (e) {
-          console.warn('Failed to sync user session to backend:', e);
+    const unsubscribe = onAuthStateChanged(
+      auth, 
+      async (user) => {
+        setCurrentUser(user);
+        if (user) {
+          // Sync user to SQL database
+          try {
+            const token = await user.getIdToken();
+            await fetch('/api/auth/sync-user', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+            });
+          } catch (e) {
+            console.warn('Failed to sync user session to backend:', e);
+          }
         }
+      },
+      (err) => {
+        console.warn('Firebase onAuthStateChanged error in SqlDatabaseModal:', err?.message || err);
       }
-    });
+    );
     return () => unsubscribe();
   }, []);
 

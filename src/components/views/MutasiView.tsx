@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { UserMinus, Plus, Printer, Search, FileText, ArrowLeft, Building, AlertCircle, RotateCcw, CheckCircle, Eye, AlertTriangle, X, ShieldAlert } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { UserMinus, Plus, Printer, Search, FileText, ArrowLeft, Building, AlertCircle, RotateCcw, CheckCircle, Eye, AlertTriangle, X, ShieldAlert, Sparkles, Clock, Edit3 } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
 import { Student } from '../../types';
 import { formatIndonesianDate, cn } from '../../lib/utils';
 import { KopSuratHeader } from '../layout/KopSuratHeader';
+import { calculateSchoolAlerts } from '../../utils/alertNotificationHelper';
 
 interface MutasiViewProps {
   onOpenMutationModal: (student: Student) => void;
@@ -25,6 +26,12 @@ export const MutasiView: React.FC<MutasiViewProps> = ({
   const [studentToCancelMutation, setStudentToCancelMutation] = useState<Student | null>(null);
   const [restoreClass, setRestoreClass] = useState<string>('Kelas 1');
   const [feedbackToast, setFeedbackToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
+
+  // Operational alerts for mutation deadlines
+  const mutationAlerts = useMemo(
+    () => calculateSchoolAlerts(students, schoolProfile).filter(a => a.category === 'mutasi'),
+    [students, schoolProfile]
+  );
 
   // Students who have mutasi records
   const mutatedStudents = students.filter(s => s.mutasi || s.status === 'Mutasi Keluar');
@@ -162,6 +169,73 @@ export const MutasiView: React.FC<MutasiViewProps> = ({
         </div>
       </div>
 
+      {/* Alert Peringatan Batas Waktu Mutasi */}
+      {mutationAlerts.length > 0 && (
+        <div className="no-print p-4 md:p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/80 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-black shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs md:text-sm font-black text-amber-950 dark:text-amber-200">
+                  {mutationAlerts.length} Peringatan Batas Waktu & Kelengkapan Berkas Mutasi
+                </h4>
+                <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">
+                  Batas konfirmasi penarikan data Dapodik 30 hari atau kelengkapan berkas surat pindah sekolah yang memerlukan tindak lanjut.
+                </p>
+              </div>
+            </div>
+            <span className="hidden sm:inline-block px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 uppercase">
+              Perlu Tindak Lanjut
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            {mutationAlerts.map(alert => (
+              <div
+                key={alert.id}
+                className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/60 flex flex-col justify-between gap-2.5 text-xs shadow-xs"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-black text-slate-900 dark:text-slate-100 truncate">
+                      {alert.studentName}
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-500 shrink-0">
+                      NIS: {alert.nis || '-'}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-amber-800 dark:text-amber-300 font-bold mt-1">
+                    {alert.title}
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                    {alert.message}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 font-semibold">
+                    <Clock className="w-3 h-3 text-amber-500" />
+                    {alert.dueDateOrDaysAgo}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const s = students.find(item => item.id === alert.studentId);
+                      if (s) onOpenMutationModal(s);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-black text-xs shrink-0 transition-colors shadow-xs cursor-pointer"
+                  >
+                    Tindak Lanjuti Mutasi
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Search & Statistics */}
       <div className="no-print grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="sm:col-span-2 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3">
@@ -238,15 +312,26 @@ export const MutasiView: React.FC<MutasiViewProps> = ({
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* Tombol Batalkan Mutasi */}
+                        {/* Tombol Edit Mutasi */}
+                        {canManageMutation && (
+                          <button
+                            onClick={() => onOpenMutationModal(student)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold rounded-lg transition-colors cursor-pointer shadow-2xs"
+                            title="Edit data dan catatan mutasi siswa"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Edit Mutasi</span>
+                          </button>
+                        )}
+
+                        {/* Tombol Batalkan Mutasi (Quick Action) */}
                         {canManageMutation && (
                           <button
                             onClick={() => handleOpenCancelDialog(student)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-lg transition-colors cursor-pointer"
                             title="Batalkan mutasi dan aktifkan kembali siswa di Buku Induk"
                           >
                             <RotateCcw className="w-3.5 h-3.5" />
-                            <span>Batalkan Mutasi</span>
                           </button>
                         )}
 

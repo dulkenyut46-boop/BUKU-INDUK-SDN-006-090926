@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Menu, 
   Search, 
@@ -31,9 +31,11 @@ import {
   Database
 } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
-import { UserRole } from '../../types';
+import { UserRole, Student } from '../../types';
 import { cn } from '../../lib/utils';
 import { ActiveTab } from './Sidebar';
+import { calculateSchoolAlerts } from '../../utils/alertNotificationHelper';
+import { NotificationDropdown } from './NotificationDropdown';
 import { 
   TutWuriHandayaniSDLogo, 
   TutWuriHandayaniKemdikbudLogo, 
@@ -55,6 +57,8 @@ interface TopbarProps {
   setActiveTab?: (tab: ActiveTab) => void;
   onSelectStudentDetail: (studentId: string) => void;
   onOpenRestoreDatabase?: () => void;
+  onMutasi?: (student: Student) => void;
+  onSTTB?: (student: Student) => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -67,6 +71,8 @@ export const Topbar: React.FC<TopbarProps> = ({
   setActiveTab,
   onSelectStudentDetail,
   onOpenRestoreDatabase,
+  onMutasi,
+  onSTTB,
 }) => {
   const handleToggle = onToggleSidebar || onOpenSidebar || (() => {});
   const handleActivityLogs = onOpenActivityLogs || onOpenActivityLog || (() => {});
@@ -86,6 +92,12 @@ export const Topbar: React.FC<TopbarProps> = ({
     exportDatabaseDB,
     isSqlConnected
   } = useSchool();
+
+  const [alertsTick, setAlertsTick] = useState(0);
+  const alerts = useMemo(
+    () => calculateSchoolAlerts(students, schoolProfile),
+    [students, schoolProfile, alertsTick]
+  );
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -340,10 +352,21 @@ export const Topbar: React.FC<TopbarProps> = ({
           )}
         </div>
 
+        {/* Notification Bell Dropdown (Operational Alerts) */}
+        <NotificationDropdown
+          alerts={alerts}
+          students={students}
+          onSelectStudentDetail={onSelectStudentDetail}
+          onMutasi={onMutasi}
+          onSTTB={onSTTB}
+          setActiveTab={setActiveTab}
+          onRefreshAlerts={() => setAlertsTick(t => t + 1)}
+        />
+
         {/* Activity Logs Button */}
         <button
           onClick={handleActivityLogs}
-          className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors relative"
+          className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors relative cursor-pointer"
           title="Riwayat Aktivitas & Log"
         >
           <History className="w-4 h-4" />

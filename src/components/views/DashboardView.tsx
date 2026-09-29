@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Users, 
   UserCheck, 
@@ -44,20 +44,27 @@ import {
 } from 'recharts';
 import { useSchool } from '../../context/SchoolContext';
 import { ActiveTab } from '../layout/Sidebar';
+import { Student } from '../../types';
 import { cn, formatIndonesianDate } from '../../lib/utils';
 import { TabelDistribusiPeringkat } from '../analytics/TabelDistribusiPeringkat';
 import { EditTahunPelajaranModal } from '../modals/EditTahunPelajaranModal';
+import { calculateSchoolAlerts } from '../../utils/alertNotificationHelper';
+import { DashboardAlertBanner } from '../alerts/DashboardAlertBanner';
 
 interface DashboardViewProps {
   setActiveTab: (tab: ActiveTab) => void;
   onOpenAddModal: () => void;
   onSelectStudentDetail: (studentId: string) => void;
+  onMutasi?: (student: Student) => void;
+  onSTTB?: (student: Student) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   setActiveTab,
   onOpenAddModal,
   onSelectStudentDetail,
+  onMutasi,
+  onSTTB,
 }) => {
   const { 
     students, 
@@ -75,6 +82,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const activeSemester = schoolProfile.semesterAktif || 'Ganjil';
   const [chartMode, setChartMode] = useState<'grouped' | 'stacked'>('grouped');
   const [isEditTPModalOpen, setIsEditTPModalOpen] = useState(false);
+
+  // Operational alerts: Mutation deadlines & Diploma/STTB validity
+  const alerts = useMemo(
+    () => calculateSchoolAlerts(students, schoolProfile),
+    [students, schoolProfile]
+  );
 
   // Metrics calculation
   const totalStudents = students.length;
@@ -143,7 +156,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Custom chart tooltip for accurate gender insight
   const CustomChartTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
+    if (active && payload && payload.length && label) {
       const dataItem = classData.find(c => c.kelas === label);
       if (!dataItem) return null;
 
@@ -226,6 +239,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Batas Waktu Mutasi & Masa Berlaku Ijazah Alerts Banner */}
+      <DashboardAlertBanner
+        alerts={alerts}
+        students={students}
+        onSelectStudentDetail={onSelectStudentDetail}
+        onMutasi={onMutasi}
+        onSTTB={onSTTB}
+        setActiveTab={setActiveTab}
+      />
 
       {/* KPI Cards Grid */}
       {/* Alert Banner: Empty School Profile Fields Notification */}

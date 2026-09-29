@@ -1,6 +1,6 @@
 /**
- * Utilitas kompresi berkas gambar scan Ijazah / Dokumen Buku Induk
- * Mengurangi resolusi & ukuran file agar aman disimpan di LocalStorage tanpa batas kuota
+ * Utilitas kompresi berkas gambar scan Ijazah / Dokumen Buku Induk & Pasfoto Siswa
+ * Mengurangi resolusi & ukuran file agar aman dan cepat disimpan di penyimpanan offline
  */
 export interface ImageCompressionResult {
   dataUrl: string;
@@ -11,9 +11,9 @@ export interface ImageCompressionResult {
 
 export function compressImageFile(
   file: File,
-  maxWidth = 1400,
-  maxHeight = 1400,
-  quality = 0.82
+  maxWidth = 1200,
+  maxHeight = 1200,
+  quality = 0.80
 ): Promise<ImageCompressionResult> {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith('image/')) {
@@ -73,4 +73,17 @@ export function compressImageFile(
     };
     reader.readAsDataURL(file);
   });
+}
+
+/**
+ * Utilitas khusus pasfoto 3x4 siswa
+ * Mengompres pasfoto ke ukuran optimal (~400x533px, ~30-50KB)
+ */
+export function compressPasfotoFile(
+  file: File,
+  maxWidth = 480,
+  maxHeight = 640,
+  quality = 0.82
+): Promise<ImageCompressionResult> {
+  return compressImageFile(file, maxWidth, maxHeight, quality);
 }

@@ -556,15 +556,17 @@ export const downloadExcelTemplate = (schoolName: string = 'Sekolah') => {
  * matching 100% with the official 69-column Dapodik Kemdikbud template.
  */
 export const exportStudentsToExcel = (
-  students: Student[],
+  students: Student[] = [],
   schoolName: string = 'Sekolah',
   options?: {
     filteredClass?: string;
   }
 ) => {
-  const wb = XLSX.utils.book_new();
+  try {
+    const list = Array.isArray(students) ? students : [];
+    const wb = XLSX.utils.book_new();
 
-  const studentRows = students.map((s, index) => {
+    const studentRows = list.map((s, index) => {
     // Calculate approximate age if not explicitly set
     let ageVal: number | string = s.usia || '';
     if (!ageVal && s.tanggalLahir) {
@@ -765,6 +767,9 @@ export const exportStudentsToExcel = (
 
   // Trigger download
   XLSX.writeFile(wb, fileName);
+  } catch (err) {
+    console.error('Gagal mengekspor berkas Excel siswa:', err);
+  }
 };
 
 /**

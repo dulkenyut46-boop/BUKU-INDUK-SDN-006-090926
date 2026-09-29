@@ -62,7 +62,7 @@ export const MutationModal: React.FC<MutationModalProps> = ({
     setUploadError(null);
     setIsCompressing(true);
     try {
-      const result = await compressImageFile(file, 1400, 1400, 0.85);
+      const result = await compressImageFile(file, 1000, 1000, 0.78);
       setFormData(prev => ({
         ...prev,
         fotoIjazah: result.dataUrl,
@@ -116,10 +116,10 @@ export const MutationModal: React.FC<MutationModalProps> = ({
             <UserMinus className="w-5 h-5" />
             <div>
               <h3 className="text-sm font-bold tracking-wide">
-                PROSES MUTASI SISWA (MENINGGALKAN SEKOLAH)
+                {student.mutasi || student.status === 'Mutasi Keluar' ? 'EDIT CATATAN MUTASI SISWA' : 'PROSES MUTASI SISWA (MENINGGALKAN SEKOLAH)'}
               </h3>
               <p className="text-[11px] text-orange-100">
-                Pencatatan Buku Induk Lembar Tinggalkan
+                {student.mutasi || student.status === 'Mutasi Keluar' ? 'Perbarui Rincian Dokumen & Alasan Pindah Sekolah' : 'Pencatatan Buku Induk Lembar Tinggalkan'}
               </p>
             </div>
           </div>
@@ -362,7 +362,7 @@ export const MutationModal: React.FC<MutationModalProps> = ({
                 className="flex items-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow-md cursor-pointer"
               >
                 <Save className="w-4 h-4" />
-                <span>Simpan Catatan Mutasi</span>
+                <span>{student.mutasi || student.status === 'Mutasi Keluar' ? 'Simpan Perubahan Mutasi' : 'Simpan Catatan Mutasi'}</span>
               </button>
             </div>
           </div>
