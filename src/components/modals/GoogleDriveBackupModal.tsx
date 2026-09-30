@@ -18,7 +18,8 @@ import {
   Copy,
   Key,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Download
 } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
 import { 
@@ -31,6 +32,8 @@ import {
   downloadGoogleDriveBackupContent, 
   deleteGoogleDriveBackup,
   setDriveAccessToken,
+  isEmbeddedWebView,
+  openInNativeBrowser,
   DriveBackupFile,
   DriveUser
 } from '../../services/googleDriveService';
@@ -54,6 +57,7 @@ export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
     getDatabaseBackupJsonString, 
     getDatabaseBackupDbString,
     restoreDatabaseFromDB,
+    exportDatabaseJSON,
     logActivity 
   } = useSchool();
 
@@ -63,7 +67,9 @@ export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
   const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isUnauthorizedDomain, setIsUnauthorizedDomain] = useState<boolean>(false);
+  const [isOAuthPolicyRestricted, setIsOAuthPolicyRestricted] = useState<boolean>(() => isEmbeddedWebView());
   const [copiedDomain, setCopiedDomain] = useState<boolean>(false);
+  const [copiedAppUrl, setCopiedAppUrl] = useState<boolean>(false);
   const [showManualTokenInput, setShowManualTokenInput] = useState<boolean>(false);
   const [manualTokenValue, setManualTokenValue] = useState<string>('');
   const [isVerifyingManualToken, setIsVerifyingManualToken] = useState<boolean>(false);
@@ -123,10 +129,12 @@ export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
     setIsAuthenticating(true);
     setAuthError(null);
     setIsUnauthorizedDomain(false);
+    setIsOAuthPolicyRestricted(isEmbeddedWebView());
     try {
       const { user, accessToken } = await signInWithGoogleDrive();
       setCurrentUser(user);
       setHasToken(!!accessToken);
+      setIsOAuthPolicyRestricted(false);
       logActivity('SYSTEM', 'Berhasil menghubungkan akun Google Drive untuk pencadangan cloud');
     } catch (err: any) {
       console.error('Sign-in error:', err);
@@ -139,16 +147,40 @@ export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
           err.message.includes('belum diizinkan dalam Firebase')
         ));
 
+      const isOAuthPolicyErr = 
+        err?.isOAuthPolicyError ||
+        isEmbeddedWebView() ||
+        (typeof err?.message === 'string' && (
+          err.message.includes('disallowed_useragent') ||
+          err.message.includes('kebijakan OAuth') ||
+          err.message.includes('policy') ||
+          err.message.includes('tidak mematuhi kebijakan')
+        ));
+
       if (isDomainErr) {
         setIsUnauthorizedDomain(true);
         setAuthError(
           'Domain aplikasi saat ini belum didaftarkan di Firebase Authentication Authorized Domains.'
+        );
+      } else if (isOAuthPolicyErr) {
+        setIsOAuthPolicyRestricted(true);
+        setAuthError(
+          'Aplikasi dibuka di peramban internal aplikasi lain. Kebijakan keamanan Google melarang login OAuth di peramban tersemat.'
         );
       } else {
         setAuthError(err?.message || 'Gagal masuk dengan akun Google. Harap coba lagi.');
       }
     } finally {
       setIsAuthenticating(false);
+    }
+  };
+
+  const handleCopyAppUrl = () => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    if (url && navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      setCopiedAppUrl(true);
+      setTimeout(() => setCopiedAppUrl(false), 2500);
     }
   };
 
@@ -523,6 +555,68 @@ export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
                       </button>
                     </div>
                   </div>
+                ) : isOAuthPolicyRestricted ? (
+                  <div className="p-4 bg-amber-50 dark:bg-amber-950/50 border-2 border-amber-400 dark:border-amber-700 rounded-xl space-y-3 text-xs text-amber-950 dark:text-amber-100 shadow-sm animate-in fade-in duration-200">
+                    <div className="flex items-start gap-2.5">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <div className="font-extrabold text-xs text-amber-900 dark:text-amber-200 uppercase tracking-wide">
+                          Peramban Aplikasi Terdeteksi • Kebijakan Google OAuth 2.0
+                        </div>
+                        <p className="text-[11.5px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                          Peringatan <em>"Aplikasi tidak mematuhi kebijakan OAuth 2.0 Google"</em> muncul karena aplikasi dibuka dari peramban internal aplikasi lain (seperti WebView, WhatsApp, Facebook, wrapper aplikasi, dll). Google secara resmi melarang login akun di peramban tersemat demi keamanan.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-800/80 space-y-2">
+                      <div className="font-bold text-[11px] text-slate-700 dark:text-slate-300">
+                        Solusi Untuk Menghubungkan Google Drive:
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={openInNativeBrowser}
+                          className="px-3.5 py-2 bg-[#003399] hover:bg-[#002266] text-white rounded-lg font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-all hover:scale-102"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Buka di Google Chrome (Browser Utama)</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleCopyAppUrl}
+                          className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          {copiedAppUrl ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Tautan Tersalin!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Salin Tautan Web</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-amber-200 dark:border-amber-900/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <span className="text-[11px] text-amber-800 dark:text-amber-300 font-semibold">
+                        Ingin mengamankan database sekarang juga tanpa login Google?
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => exportDatabaseJSON()}
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Unduh File Cadangan (.json)</span>
+                      </button>
+                    </div>
+                  </div>
                 ) : authError ? (
                   <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -724,6 +818,18 @@ export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
               <div className="text-[11px] text-slate-500 text-center flex items-center justify-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Berkas disimpan secara privat di folder Google Drive Anda</span>
+              </div>
+
+              {/* Alternatif Pencadangan Langsung ke Perangkat */}
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => exportDatabaseJSON()}
+                  className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-750 dark:text-slate-200 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Cadangkan & Unduh File (.json) Langsung ke Perangkat</span>
+                </button>
               </div>
             </div>
           )}

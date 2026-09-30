@@ -34,6 +34,51 @@ googleDriveProvider.setCustomParameters({
   prompt: 'select_account',
 });
 
+/**
+ * Deteksi apakah aplikasi sedang dibuka di dalam peramban internal aplikasi lain (embedded WebView)
+ * seperti WhatsApp, Facebook, Instagram, Line, TikTok, atau Android WebView wrapper.
+ */
+export const isEmbeddedWebView = (): boolean => {
+  if (typeof window === 'undefined' || !navigator) return false;
+  const ua = navigator.userAgent || navigator.vendor || (window as any).opera || '';
+
+  // Pola user agent untuk WebView dan in-app browser
+  const isWvSignature = /wv|WebView|FBAN|FBAV|Instagram|Line|WhatsApp|TikTok|MicroMessenger|GSA|Snapchat|HeyTapBrowser/i.test(ua);
+  const isAndroidWebView = /Android/i.test(ua) && /Version\/[0-9.]+/i.test(ua) && /Chrome\/[0-9.]+/i.test(ua);
+  const isIosWebView = /(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(ua);
+
+  return isWvSignature || isAndroidWebView || isIosWebView;
+};
+
+/**
+ * Membuka aplikasi secara langsung di browser asli perangkat (misalnya Google Chrome di Android)
+ * untuk mematuhi kebijakan Google OAuth 2.0 yang melarang login di dalam WebView.
+ */
+export const openInNativeBrowser = (): void => {
+  if (typeof window === 'undefined') return;
+  const currentUrl = window.location.href;
+  const isAndroid = /Android/i.test(navigator.userAgent);
+
+  if (isAndroid) {
+    try {
+      // Menggunakan skema Intent Android untuk membuka Google Chrome resmi di perangkat
+      const cleanHostPath = currentUrl.replace(/^https?:\/\//i, '');
+      const intentUrl = `intent://${cleanHostPath}#Intent;scheme=https;package=com.android.chrome;end`;
+      window.location.href = intentUrl;
+
+      // Fallback cadangan
+      setTimeout(() => {
+        window.open(currentUrl, '_system');
+      }, 600);
+      return;
+    } catch {
+      window.open(currentUrl, '_system');
+    }
+  } else {
+    window.open(currentUrl, '_system');
+  }
+};
+
 // In-memory token & user cache (Do NOT store in localStorage or sessionStorage for security)
 let cachedAccessToken: string | null = null;
 let cachedUser: DriveUser | null = null;
@@ -204,8 +249,20 @@ const requestGisAccessToken = async (): Promise<{ accessToken: string; user: Dri
         callback: async (response: any) => {
           if (response.error) {
             console.error('GIS Error callback:', response);
+            const errStr = `${response.error} ${response.error_description || ''}`.toLowerCase();
             if (response.error === 'access_denied') {
               reject(new Error('Izin akses Google Drive ditolak oleh pengguna.'));
+            } else if (
+              errStr.includes('disallowed_useragent') ||
+              errStr.includes('kebijakan') ||
+              errStr.includes('policy') ||
+              errStr.includes('400')
+            ) {
+              const policyErr: any = new Error(
+                'Peramban internal aplikasi tidak mematuhi kebijakan OAuth 2.0 Google (disallowed_useragent).'
+              );
+              policyErr.isOAuthPolicyError = true;
+              reject(policyErr);
             } else {
               reject(new Error(response.error_description || response.error || 'Gagal memperoleh izin akses dari Google'));
             }
@@ -303,6 +360,21 @@ export const signInWithGoogleDrive = async (): Promise<{ user: DriveUser; access
           enhancedError.currentDomain = currentHostname;
           enhancedError.projectId = firebaseConfig.projectId;
           throw enhancedError;
+        }
+
+        // Check for disallowed_useragent or OAuth policy violation
+        const combinedErrText = `${fbError?.message || ''} ${gisError?.message || ''}`.toLowerCase();
+        if (
+          combinedErrText.includes('disallowed_useragent') ||
+          combinedErrText.includes('kebijakan oauth') ||
+          combinedErrText.includes('policy') ||
+          combinedErrText.includes('tidak mematuhi kebijakan')
+        ) {
+          const policyErr: any = new Error(
+            'Aplikasi dibuka di peramban internal (WebView). Kebijakan OAuth 2.0 Google melarang login akun di peramban tersemat. Silakan buka di Google Chrome atau unduh file cadangan secara langsung.'
+          );
+          policyErr.isOAuthPolicyError = true;
+          throw policyErr;
         }
 
         // Rethrow original or GIS error safely

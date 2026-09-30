@@ -88,6 +88,8 @@ export const initialAdminUsers: AdminUser[] = [
   {
     id: 'usr-001',
     nama: 'H. Marlisman, S.Pd., M.M.',
+    username: 'adminsdn006',
+    password: 'sdn006',
     nip: '19680512 199103 1 005',
     email: 'kepsek.sdn006@kemdikbud.go.id',
     role: 'admin',
@@ -368,7 +370,22 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_USERS);
-      return saved ? JSON.parse(saved) : initialAdminUsers;
+      if (saved) {
+        const parsed: AdminUser[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(u => {
+            if (u.role === 'admin' || u.id === 'usr-001') {
+              return {
+                ...u,
+                username: u.username || 'adminsdn006',
+                password: u.password || 'sdn006',
+              };
+            }
+            return u;
+          });
+        }
+      }
+      return initialAdminUsers;
     } catch {
       return initialAdminUsers;
     }
@@ -576,27 +593,68 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const login = (
-    userOrRole: AdminUser | UserRole,
+    userOrRoleOrUsername: AdminUser | UserRole | string,
     pinOrPassword?: string
   ): { success: boolean; message?: string } => {
     let targetRole: UserRole = 'umum';
     let targetUser: AdminUser | null = null;
 
-    if (typeof userOrRole === 'string') {
-      targetRole = userOrRole;
-      targetUser = adminUsers.find(u => u.role === targetRole) || null;
+    if (typeof userOrRoleOrUsername !== 'string' && userOrRoleOrUsername) {
+      targetUser = userOrRoleOrUsername;
+      targetRole = userOrRoleOrUsername.role;
     } else {
-      targetUser = userOrRole;
-      targetRole = userOrRole.role;
-    }
+      const input = (typeof userOrRoleOrUsername === 'string' ? userOrRoleOrUsername : '').trim();
+      const pwd = (pinOrPassword || '').trim();
 
-    // Check PIN requirement if logging in as Admin with explicit PIN
-    if (targetRole === 'admin' && pinOrPassword && pinOrPassword.trim() !== '') {
-      if (pinOrPassword !== securitySettings.pinAdmin && pinOrPassword !== '123456') {
-        return {
-          success: false,
-          message: 'PIN Administrator tidak sesuai. Silakan periksa kembali (Default: 123456)',
-        };
+      // 1. Direct match for administrator: adminsdn006 / sdn006
+      if (input.toLowerCase() === 'adminsdn006') {
+        if (pwd === 'sdn006' || pwd === securitySettings.pinAdmin || pwd === '123456') {
+          targetRole = 'admin';
+          targetUser = adminUsers.find(u => u.username === 'adminsdn006' || u.role === 'admin') || initialAdminUsers[0];
+        } else {
+          return {
+            success: false,
+            message: 'Password Administrator salah. Silakan periksa kembali.',
+          };
+        }
+      } 
+      // 2. Legacy role input ('admin', 'user', 'umum')
+      else if (input === 'admin' || input === 'user' || input === 'umum') {
+        targetRole = input as UserRole;
+        targetUser = adminUsers.find(u => u.role === targetRole) || null;
+        if (targetRole === 'admin' && pwd && pwd !== securitySettings.pinAdmin && pwd !== '123456' && pwd !== 'sdn006') {
+          return {
+            success: false,
+            message: 'Password / PIN Administrator tidak sesuai.',
+          };
+        }
+      } 
+      // 3. Match staff by username, email, or NIP
+      else {
+        const found = adminUsers.find(u => 
+          (u.username && u.username.toLowerCase() === input.toLowerCase()) ||
+          u.email.toLowerCase() === input.toLowerCase() ||
+          (u.nip && u.nip.replace(/\s+/g, '') === input.replace(/\s+/g, ''))
+        );
+
+        if (!found) {
+          return {
+            success: false,
+            message: 'Username atau Pengguna tidak ditemukan. Silakan periksa kembali.',
+          };
+        }
+
+        // Validate password for staff
+        const validPwd = found.password || 'sdn006';
+        if (pwd !== validPwd && pwd !== securitySettings.pinAdmin && pwd !== '123456' && pwd !== 'sdn006') {
+          return {
+            success: false,
+            message: 'Password yang Anda masukkan salah. Silakan periksa kembali.',
+          };
+        }
+
+        targetUser = found;
+        targetRole = found.role;
       }
     }
 

@@ -274,6 +274,8 @@ export type TeacherDutyCategory = 'kepala_sekolah' | 'wali_kelas' | 'guru_mapel'
 export interface AdminUser {
   id: string;
   nama: string;
+  username?: string;
+  password?: string;
   nip?: string;
   email: string;
   role: UserRole;
