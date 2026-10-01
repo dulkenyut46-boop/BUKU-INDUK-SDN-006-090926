@@ -28,7 +28,8 @@ import {
   Moon,
   Database,
   Upload,
-  Cloud
+  Cloud,
+  GraduationCap
 } from 'lucide-react';
 import { useSchool } from '../../context/SchoolContext';
 import { UserRole, RolePermissions, AdminUser } from '../../types';
@@ -618,13 +619,25 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = ({
                   Kelola staf pengajar, operator dapodik, dan administrator yang memiliki akses ke dalam sistem
                 </p>
               </div>
-              <button
-                onClick={handleOpenAddUser}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#003399] hover:bg-[#002266] text-white text-xs font-bold rounded-xl shadow-md transition-all self-start sm:self-auto"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>+ Tambah Akun Petugas</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('teachers')}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                  title="Buka menu lengkap Data Guru untuk kelola biodata PTK, pasfoto resmi, dan penugasan mengajar"
+                >
+                  <GraduationCap className="w-4 h-4 text-white" />
+                  <span>Buka Menu Data Guru</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenAddUser}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-[#003399] hover:bg-[#002266] text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>+ Tambah Akun Petugas</span>
+                </button>
+              </div>
             </div>
 
             <div className="overflow-x-auto">

@@ -271,12 +271,32 @@ export interface ActivityLog {
 
 export type TeacherDutyCategory = 'kepala_sekolah' | 'wali_kelas' | 'guru_mapel' | 'tenaga_kependidikan';
 
+export type TeacherActiveStatus = 'Aktif' | 'Pensiun' | 'Cuti' | 'Mutasi Keluar' | 'Nonaktif';
+
 export interface AdminUser {
   id: string;
   nama: string;
   username?: string;
   password?: string;
   nip?: string;
+  nuptk?: string;
+  nik?: string;
+  jenisKelamin?: 'L' | 'P';
+  tempatLahir?: string;
+  tanggalLahir?: string;
+  namaIbuKandung?: string;
+  statusPernikahan?: string;
+  agama?: string;
+  noHp?: string;
+  alamat?: string;
+  statusKepegawaian?: 'PNS' | 'PPPK' | 'Guru Honorer' | 'GTY' | 'Tenaga Honorer' | string;
+  pangkatGolongan?: string;
+  pendidikanTerakhir?: string;
+  jurusanPendidikan?: string;
+  ptAsal?: string;
+  tmtPengangkatan?: string;
+  tmtTugas?: string;
+  fotoUrl?: string;
   email: string;
   role: UserRole;
   jabatan: string;
@@ -284,7 +304,19 @@ export interface AdminUser {
   tingkatKelas?: string;
   mataPelajaran?: string;
   tugasTendik?: string;
-  status: 'Aktif' | 'Nonaktif';
+  status: TeacherActiveStatus | 'Aktif' | 'Nonaktif' | string;
+  // Data Riwayat Keaktifan Guru
+  tanggalPensiun?: string;
+  noSkPensiun?: string;
+  pejabatSkPensiun?: string;
+  jenisCuti?: string;
+  tglMulaiCuti?: string;
+  tglSelesaiCuti?: string;
+  noIzinCuti?: string;
+  sekolahTujuanMutasi?: string;
+  tglSkMutasi?: string;
+  noSkMutasi?: string;
+  keteranganKeaktifan?: string;
   terakhirLogin: string;
   avatarColor: string;
 }
